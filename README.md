@@ -98,10 +98,14 @@ If the tone reads as cynical: the cynicism is calibrated. We have seen too many 
 
 ### As a Claude Code plugin (recommended)
 
-The repo is structured as a Claude Code plugin. Install in any of these ways:
+The repo is structured as a Claude Code plugin and ships its own marketplace manifest. Install in any of these ways:
 
 ```bash
-# From the GitHub remote
+# From the marketplace (preferred — one-time setup, then easy updates)
+/plugin marketplace add dwalleck/gilfoyle
+/plugin install gilfoyle@gilfoyle
+
+# Direct install from the GitHub remote
 /plugin install https://github.com/dwalleck/gilfoyle
 
 # From a local clone

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "gilfoyle",
+  "description": "A skill suite for shipping reliable software, not fastest. Six skills whose every gate reaches outside the design document.",
+  "owner": {
+    "name": "Daryl Walleck",
+    "url": "https://github.com/dwalleck"
+  },
+  "plugins": [
+    {
+      "name": "gilfoyle",
+      "description": "Six skills (prove-it-prototype, falsifiable-design, budgeted-plan, checkpointed-build, tdd-scoped, assessing-review-feedback) that force every loop iteration to touch reality and an independent oracle before the design document signs off on itself.",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "Daryl Walleck",
+        "url": "https://github.com/dwalleck"
+      },
+      "homepage": "https://github.com/dwalleck/gilfoyle",
+      "license": "MIT",
+      "category": "development",
+      "keywords": [
+        "methodology",
+        "reliability",
+        "code-review",
+        "tdd",
+        "verification",
+        "skills"
+      ]
+    }
+  ]
+}
