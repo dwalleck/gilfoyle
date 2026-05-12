@@ -52,7 +52,15 @@ Fake oracles, do not accept these:
 
 ## Process
 
-0. **Check the tracker for prior art.** Before probing, search your project's issue tracker for tickets that mention the area or behavior you're about to investigate. Keyword-match on the function names, files, or symptoms involved. Read any matches: prior reviewers may have already filed the bug you're about to re-discover, and existing tickets carry context (PR comments, related fixes, reviewer rationale) that saves probe iterations. **5-minute upper bound — do not rabbit-hole.** Output: a short list of related issue IDs in your probe directory (e.g., `.<issue>/related-issues.md`), or an explicit "no prior art found" note. If your project has no issue tracker, skim recent PR reviews on adjacent files and any `docs/` design notes — same idea, different surface.
+0. **Check the tracker for prior art.** Before probing, search your project's issue tracker for tickets that mention the area or behavior you're about to investigate. Keyword-match on the function names, files, or symptoms involved. Read any matches: prior reviewers may have already filed the bug you're about to re-discover, and existing tickets carry context (PR comments, related fixes, reviewer rationale) that saves probe iterations. **5-minute upper bound — do not rabbit-hole.** Output: a short list of related issue IDs in your probe directory (e.g., `.<issue>/related-issues.md`), or an explicit "no prior art found" note.
+
+   **How to find the tracker** (when not already known), in rough order of likelihood:
+   - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` often documents the tracker and how to query it. Check first.
+   - A `gh` CLI + GitHub remote → GitHub Issues. Try `gh issue list --search "<keyword>"`.
+   - A project-specific tracking CLI in the repo (e.g., `rivets`, `bd`, `beads`, `linear`). Check `Cargo.toml`, `package.json`, `Makefile`, or `bin/` for clues; the tool is often dogfooded.
+   - `.github/ISSUE_TEMPLATE/`, `BUGS.md`, or `ISSUES.md` at the repo root.
+   - When no formal tracker exists: skim recent PR reviews on adjacent files (`gh pr list --state all` + read the comments) and any `docs/` design notes. Same idea, different surface.
+   - **If none of the above and you're unsure: ask the user.** Don't guess and don't skip.
 
 1. **State the smallest possible question the feature answers.** Not the whole feature. The smallest factual question. (For coupling: "what packages does this workspace contain?" not "what are the coupling metrics?")
 
