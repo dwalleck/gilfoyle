@@ -96,9 +96,49 @@ If the tone reads as cynical: the cynicism is calibrated. We have seen too many 
 
 ## How to install
 
-Point your agent's skill-search at this directory's `skills/` subtree. Each skill is a `SKILL.md` with frontmatter. The skills cross-reference each other by name; the suite assumes you can invoke them in sequence and that each downstream skill enforces its gate against the upstream skill's outputs.
+### As a Claude Code plugin (recommended)
+
+The repo is structured as a Claude Code plugin. Install in any of these ways:
+
+```bash
+# From the GitHub remote
+/plugin install https://github.com/dwalleck/gilfoyle
+
+# From a local clone
+/plugin install C:\path\to\gilfoyle
+# or
+/plugin install /path/to/gilfoyle
+```
+
+Once installed, the six skills appear in your `Skill` tool's available-skills list. Invoke directly:
+
+```
+Skill prove-it-prototype
+Skill falsifiable-design
+Skill budgeted-plan
+Skill checkpointed-build
+Skill tdd-scoped
+Skill assessing-review-feedback
+```
+
+Or just describe what you're doing — Claude will pick the right skill from the skill's `description` frontmatter.
+
+### As a bare skill directory (no plugin install)
+
+If your agent doesn't support plugin installation, point its skill-search at this repo's `skills/` subtree manually. Each skill is a `SKILL.md` with `name` + `description` frontmatter. The skills cross-reference each other by name; the suite assumes you can invoke them in sequence and that each downstream skill enforces its gate against the upstream skill's outputs.
 
 We are not going to write a configuration system. You can configure your tools.
+
+## When to invoke
+
+At the start of any non-trivial work:
+
+- **New feature** on top of an existing system (resolver fix, schema change, API surface) → start with `prove-it-prototype`. Don't skip to design until probe and oracle agree.
+- **Bug fix that spans multiple files** → start with `prove-it-prototype` against the bug itself; the probe + oracle pair becomes the regression test.
+- **Refactor that changes public surface** → start with `falsifiable-design`; the cheapest falsifier is the smoke test that the refactor doesn't lose any caller.
+- **PR review feedback arrives** → invoke `assessing-review-feedback` BEFORE applying any reviewer suggestions.
+
+For trivial work (typos, single-function changes with no behavior change, doc edits), don't invoke the loop — it's process overhead for nothing.
 
 ## Hail Satan
 
