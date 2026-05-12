@@ -56,6 +56,7 @@ Before applying the fix, prove the bug exists:
 - Construct an experiment that exhibits the alleged problem. Could be a unit test, a shell command, a database query, eyeballing the code with the claim in mind.
 - Run it. Confirm the bug, refute it, or note "can't reproduce."
 - If you can't construct an experiment, the bug claim is too vague. Push back on the reviewer for specifics OR mark as "speculation, not actionable."
+- **Also search the tracker.** A reviewer finding often describes a known issue with a different framing. Keyword-match the finding against the project's issue tracker. If a match exists: the finding is "duplicate of <issue>" rather than a new bug to design a fix for. That's still a real signal (multiple readers flagging the same thing means it's observable), but the *decision shape* becomes "link the PR to the known issue and defer" or "absorb the known issue's scope into this fix" — not "design from scratch." Add a corresponding row category to the decision log: **"Duplicate of <id>"** with a one-line note on whether you're deferring or absorbing.
 
 A reviewer who said "this might fail in production" without naming a reproduction is not a finding. It's a feeling.
 

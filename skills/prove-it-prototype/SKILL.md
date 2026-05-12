@@ -52,6 +52,8 @@ Fake oracles, do not accept these:
 
 ## Process
 
+0. **Check the tracker for prior art.** Before probing, search your project's issue tracker for tickets that mention the area or behavior you're about to investigate. Keyword-match on the function names, files, or symptoms involved. Read any matches: prior reviewers may have already filed the bug you're about to re-discover, and existing tickets carry context (PR comments, related fixes, reviewer rationale) that saves probe iterations. **5-minute upper bound — do not rabbit-hole.** Output: a short list of related issue IDs in your probe directory (e.g., `.<issue>/related-issues.md`), or an explicit "no prior art found" note. If your project has no issue tracker, skim recent PR reviews on adjacent files and any `docs/` design notes — same idea, different surface.
+
 1. **State the smallest possible question the feature answers.** Not the whole feature. The smallest factual question. (For coupling: "what packages does this workspace contain?" not "what are the coupling metrics?")
 
 2. **Write the probe.** Aim for under 50 lines. Run it against the real codebase.
@@ -70,7 +72,7 @@ This is the most important moment in the entire feature. Do not paper over it.
 
 Causes, in descending order of how often they're the real reason:
 
-1. **The underlying system is broken** in a way you didn't know about. File the bug. Pause this feature until that bug is filed and either fixed or scoped around.
+1. **The underlying system is broken** in a way you didn't know about. **Before filing a new bug, search the tracker for an existing ticket describing the symptom.** Drift in your probe may be a re-discovery of work someone already filed. If found: link to the existing ticket from your design doc; if the existing ticket is closed-but-not-applied (an incomplete fix), note the residual gap. Otherwise file the bug. Either way: pause this feature until that bug is filed and either fixed or scoped around.
 
 2. **Your model of the system is wrong.** The system does something you didn't predict. Update your model. Write down what you learned.
 
@@ -98,6 +100,7 @@ If you learned nothing new, you didn't probe hard enough. Try again with a sharp
 - "I'll skip the oracle and just check that the probe output looks sensible." Sensible-looking output is how bugs survive eleven review rounds. Pick an oracle.
 - "The disagreement is small, I'll proceed and come back." No. Disagreement is information. The information goes upstream, not downstream.
 - "There's no oracle available for this." Then your feature has no ground truth, which means it's not falsifiable, which means it's not engineering. Find a way.
+- "I went straight to probing without checking the tracker." Everyone files surprising findings; some of them will be yours. Step 0 is bounded — five minutes — and catches the case where you're about to re-discover prior work. Do it.
 
 ## What this skill is not
 

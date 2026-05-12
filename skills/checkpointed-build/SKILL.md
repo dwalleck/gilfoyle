@@ -133,6 +133,7 @@ The user picks. Possible outcomes:
 - **Implementation is wrong.** Fix. Rerun gates. Stay on slice N.
 - **Oracle is wrong.** Revise the oracle. Re-run `prove-it-prototype` to confirm the revised oracle still agrees with the probe. Stay on slice N.
 - **Design is wrong.** Go back to `falsifiable-design`. The plan may need to be rewritten. Possibly the probe needs to be re-run.
+- **Drift matches a known issue.** Before assuming the design is wrong, search the project's issue tracker for tickets describing the drift. Slice gate failures are often re-discoveries of filed-but-deferred work. Found a match? Document the relationship in the slice's commit message and decide whether to: (a) absorb the known issue's scope into this PR, (b) ship the slice and reference the known issue as related, or (c) pause until the known issue lands. Bounded check: five minutes.
 
 Your job is to surface accurately, not to decide. Decisions about which thing is wrong are not yours to make from inside the executor.
 
