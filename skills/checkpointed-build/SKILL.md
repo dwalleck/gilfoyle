@@ -113,17 +113,26 @@ If they drift, this slice broke something earlier slices established. That is th
 
 For every loop the slice introduced, confirm the production-scale cost is what the plan budgeted. For an always-on phase, measure wall-clock against the budget. Use `time`, `hyperfine`, or a benchmark harness. Eyeballing it does not count.
 
-#### f. If anything in (b)–(e) fails: STOP.
+#### e2. Run the slice's regression fence
+
+If the slice corresponds to a claim with a `Regression fence` entry in the falsifiable-design table, run that test specifically and confirm it passes. The fence is the *permanent* form of the falsifier — it should fail when the bug class re-appears and pass otherwise.
+
+If the slice's claim has `Regression fence: manual` in the design, this step is a one-time manual check (do it now, document the result in the slice's commit message).
+
+If the slice has no associated regression fence, this step is a no-op — but flag it: a claim shipping with no regression fence is a future-regression risk the design accepted explicitly. Note the absence in the slice's commit message so the next reader sees the gap.
+
+#### f. If anything in (b)–(e2) fails: STOP.
 
 Do not commit. Do not advance to the next slice. Surface to the user:
 
 ```
 Slice N halted.
 
-- Unit tests:   [pass | fail with diff]
-- Stress fixture: [pass | fail with diff]
-- Oracle drift: [exact items where binary and oracle disagree]
-- Budget:       [actual vs planned, with measurement]
+- Unit tests:       [pass | fail with diff]
+- Stress fixture:   [pass | fail with diff]
+- Oracle drift:     [exact items where binary and oracle disagree]
+- Budget:           [actual vs planned, with measurement]
+- Regression fence: [pass | fail with diff | none associated with this slice]
 
 The implementation, the oracle, or the design is wrong. Which is it?
 ```
@@ -144,18 +153,48 @@ The slice you just landed may have made earlier slice comments out of date. Scan
 - **Forward-reference comments** like `// slice N hardens this` or `// to be implemented in step M`. If the future slice has now landed, rewrite the comment to describe current behavior in present-tense / past-tense factual terms.
 - **Contract discoveries.** If a bug surfaced in this slice revealed a previously-implicit contract (e.g., "this function requires forward-slash paths"), that contract belongs in the function's doc-comment AND, if load-bearing, enforced per the doc-comment-as-contract rule. Update the doc in this same commit, not later.
 - **Renames you should have done.** If this slice changed the semantics of an existing function, ask whether the function's name still describes its behavior. If the name is now misleading (e.g., `search_symbol_by_name` that now refuses ambiguity), rename in this commit. The longer a misleading name persists, the more callers depend on the wrong mental model.
+- **Tracker references in code and commit messages.** Per the tracker discipline introduced in `falsifiable-design`: any `TODO(rivets-XXX)`, `// see rivets-YYY`, `// deferred to rivets-ZZZ` in code — and any "tracked at rivets-N" / "deferred to follow-up" / "out of scope" phrase in the commit message you're about to write — must point at an existing issue whose content covers the deferred work. Run `rivets show <id>` (or tracker equivalent) to verify. If the ID doesn't exist, the issue's description doesn't match the deferral, or the comment has no ID at all, file the issue *now* and update the reference. Anonymous TODOs and phantom tracker IDs rot.
 
-Run `grep` for the slice number, for keywords like "TODO", "later", "future", and for any comment phrase that anticipated work that's now done. Fix what you find before committing.
+Run `grep` for the slice number, for keywords like "TODO", "later", "future", "deferred", "tracked", and for any comment phrase that anticipated work that's now done. Fix what you find before committing.
 
-#### g. If everything in (b)–(e) passes: commit
+#### g. If everything in (b)–(e2) passes: commit
 
 One commit per slice. Commit message references the design claim this slice implements.
+
+#### g2. Drift check (after commit, before the next slice)
+
+Generated and structured files (e.g., `.rivets/issues.jsonl`, `Cargo.lock`, schema dumps, generated client code) silently accumulate divergence from main on long-lived branches. Each tool invocation that mutates them is invisible at commit time; the conflict only surfaces at merge time.
+
+Catch this every slice, not at PR-open time:
+
+```bash
+git fetch origin main
+git diff origin/main --stat | grep -E '\.(jsonl|lock)$|issues\.jsonl|schema'
+```
+
+Flag any of:
+
+- Any divergence on a JSONL or similar append-only file (one issue per line, one log entry per line, etc.) — those almost always conflict
+- Any `Cargo.lock` / `package-lock.json` / `poetry.lock` change
+- Any single-file divergence > 50 lines on a file you don't recognize editing this slice
+
+If anything flagged: merge or rebase from main *before* starting the next slice. Prefer a merge commit (preserves slice history) over a rebase (rewrites it and breaks already-pushed commit hashes if other reviewers are reading them).
+
+**Symptom that means you missed this step:** PR opened, `gh pr checks <N>` reports "no checks reported on the branch," zero workflow runs in the queue. GitHub Actions silently refuses to run `pull_request` workflows on PRs with conflicts and gives no surfaced signal. If you see zero CI activity within ~2 minutes of pushing a non-trivial PR, run `git diff origin/main --stat` — almost always a merge conflict.
 
 ### 3. Repeat until all slices complete
 
 ### 4. Final integration check
 
-After every slice has passed: rebuild the binary. Run *every* oracle from `prove-it-prototype` and *every* falsifier from `falsifiable-design`. They must all still pass.
+After every slice has passed: rebuild the binary. Run *every* oracle from `prove-it-prototype`, *every* falsifier from `falsifiable-design`, and *every* regression fence in the Falsification table. They must all still pass.
+
+The oracle / falsifier / fence are related but distinct:
+
+- **Oracle** (prove-it-prototype): an independent computation of the same answer as the probe. Used to verify the design's empirical premise.
+- **Falsifier** (falsifiable-design): the experiment that would prove a claim false. Often one-shot.
+- **Regression fence** (falsifiable-design + checkpointed-build): the *permanent* CI form of the falsifier. Catches future regressions.
+
+If the fence is the same artifact as the falsifier (when both are deterministic tests), run it once and count it as both. If the falsifier is a one-shot measurement and the fence is a separate CI test, run the fence here — the falsifier's job ended in the design phase.
 
 If any fail, you have a regression introduced somewhere in the slice chain. Bisect to find which slice. Stop. Surface.
 
@@ -165,6 +204,7 @@ If any fail, you have a regression introduced somewhere in the slice chain. Bise
 - A test fails for a reason the plan didn't anticipate. Stop. Ask. **Do not "fix" the test to make it pass.**
 - A slice takes more than 2x its estimated time. Stop. Reassess.
 - You're about to add a line of code you couldn't justify out loud to a stranger. Stop. Justify.
+- You opened a PR but `gh pr checks` reports zero checks running within 2 minutes. That's almost certainly a merge conflict — `git diff origin/main --stat` immediately before assuming a CI queue delay.
 
 ## Red flags
 
@@ -173,6 +213,10 @@ If any fail, you have a regression introduced somewhere in the slice chain. Bise
 - "The plan said to write this loop, so I wrote this loop, even though I see a better one." Wrong. The plan is advisory. Write the better loop. Note the deviation in the commit message.
 - "I'll batch the next three slices and run gates at the end." No. Each slice gets its own gate. Batching is how drift becomes invisible.
 - "The stress fixture passed but the unit test was wrong, so the test passed." Stop. The unit test was wrong. Fix the test before you advance.
+- "PR is open but CI hasn't started — I'll wait for the queue." Wrong. GitHub Actions doesn't fire workflows on conflicted PRs and gives no surfaced signal. Zero-checks-reported is a conflict fingerprint, not a queue delay. Run `git diff origin/main --stat` first.
+- "This claim is empirically verified, no need for a regression test." Wrong. Empirical verification is one-shot; CI is permanent. Measurement-only claims silently regress. The fence is the permanent form.
+- `// TODO: figure out later` / `// FIXME: needs work` / `// deferred to a follow-up` — anonymous future-work pointers without tracker IDs. Either file the issue and reference its ID, or fix the thing now. No `TODO(someone someday)` — every TODO gets a `TODO(rivets-XXX)`.
+- "I cited `rivets-abc1` but didn't verify it exists." Phantom tracker references and silent deferrals fail in the same way: future contributors looking at the tracker can't find the deferred work. Run `rivets show <id>` before writing the reference, not after.
 
 ## What this skill is not
 

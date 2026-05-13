@@ -116,14 +116,15 @@ If the rule is violated, justify it in writing in the slice. Don't ship an unexa
 
 ### 7. Self-review
 
-Before saving the plan, run these four lists:
+Before saving the plan, run these five lists:
 
 1. **Every loop in the plan.** For each: complexity stated? Within budget at production scale?
 2. **Every fixture.** For each: what bug class is it designed to fail under? Is it more than a happy-path exercise?
 3. **Every doc-comment precondition.** For each: classified as load-bearing-correctness or sanity-hint? Where is the matching enforcement (runtime check for the former, `debug_assert!` for the latter)?
 4. **Every write target.** For each: classified data or diagnostic?
+5. **Every tracker reference.** Per the tracker discipline introduced in `falsifiable-design`: every "deferred to rivets-XXX" / "out of scope per rivets-YYY" / "tracked elsewhere" / "follow-up" in the plan must resolve to an existing tracker issue whose content covers the deferred work. Deferrals without a citation get an issue filed *now* before the plan is finalized — don't wait for review feedback to surface the gap.
 
-If any of the four lists has gaps, the plan is incomplete. Don't save it.
+If any of the five lists has gaps, the plan is incomplete. Don't save it.
 
 ## Hard gate
 
@@ -133,6 +134,7 @@ The next skill — `checkpointed-build` — refuses to run until:
 - [ ] Every loop has a complexity statement
 - [ ] Every slice has a stress fixture
 - [ ] The plan's claim coverage matches the design's claim list
+- [ ] Every tracker reference in the plan resolves to an existing issue whose content covers the deferred work (per the tracker discipline in `falsifiable-design`)
 
 ## Red flags
 
@@ -154,6 +156,6 @@ A plan document with:
 
 - One section per slice.
 - Each slice has filled-in mandatory fields.
-- A `## Plan Self-Review` section at the bottom listing the four lists from step 7, all empty (no gaps).
+- A `## Plan Self-Review` section at the bottom listing the five lists from step 7, all empty (no gaps).
 
 If the plan has gaps, the skill didn't run. Run it.

@@ -82,6 +82,16 @@ Three outcomes:
 
 Each decision is documented. One line per finding, kept with the code or PR. Future reviewers (and future you) need to see "we considered finding X and decided Y because Z."
 
+**Deferral has a tracker-discipline tax.** Any decision that's effectively "real concern, defer to follow-up" — i.e., a **Reject (defer)** or **Modify (deferred work)** — must name a tracker ID in the decision log's `Note` column. The procedure:
+
+1. Search the tracker for an existing issue covering the deferred work. Keyword-match against issue titles and descriptions.
+2. **Found one:** reference its ID in the `Note` column. The decision becomes "Reject (defer): tracked at rivets-XXX."
+3. **No match:** file the issue *before* finalizing the decision log. `rivets create --title "..." --type task --priority N --description "<one-line context + the finding's key claim>"`. Put the new ID in the `Note` column.
+
+A "defer" decision with no tracker reference is a silent drop. Six months from now, no one knows the finding existed — and the next reviewer is likely to find it again, with both of you re-doing the same triage.
+
+This is the same rule as `falsifiable-design`'s tracker discipline, applied to review-time deferrals.
+
 ### 5. Apply changes
 
 Standard TDD discipline (`gilfoyle/tdd-scoped`) for any fix that introduces behavior change. Pure doc/comment edits don't need TDD but still need to be defensible.
@@ -112,8 +122,9 @@ No fix gets applied until:
 - [ ] Bug claim verified (or marked as un-reproducible)
 - [ ] Fix evaluated (root cause? side effects? alignment? cost?)
 - [ ] Decision recorded (accept / modify / reject + one-line rationale)
+- [ ] **Every "Reject (defer)" or "Modify (deferred work)" decision names a verified tracker ID** in the `Note` column — either an existing issue whose content covers the deferred work, or a freshly-filed one
 
-If you can't fill out all four, you're not ready to apply. Keep thinking.
+If you can't fill out all five, you're not ready to apply. Keep thinking.
 
 ## Red flags
 
@@ -125,6 +136,7 @@ If you can't fill out all four, you're not ready to apply. Keep thinking.
 - "Bot suggestions don't deserve verification." Yes they do. Bots emit volume; humans emit signal-to-noise judgment. Verify either way.
 - "The fix doesn't change behavior, just style. Skip the verification." Style changes can still introduce bugs (renaming a function breaks callers, removing a comment loses context). Verify proportional to the change's blast radius.
 - "Two reviewers agreed, so it must be right." Two reviewers can share the same blind spot. Verify the underlying claim, not the count.
+- "Rejecting this — out of scope for the PR." Out of scope is not a synonym for "we'll never do this." Either file a tracker entry for the deferred work and reference its ID, or you've effectively decided the finding was wrong (in which case "Reject" with rationale, not "defer"). "Out of scope, no tracker" is a silent drop.
 
 ## What this skill is not
 
