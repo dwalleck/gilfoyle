@@ -63,15 +63,29 @@ If the slice is adding a brand-new function with no existing callers, this step 
 
 #### a0. Helper search (before implementing)
 
-Before writing any utility code (path manipulation, string normalization, error wrapping, retry logic, common SQL fragments), `grep` the codebase for existing equivalents. If a helper exists with matching semantics, reuse it. If a helper exists with *close* semantics, either widen the helper or write a wrapper — do not duplicate.
+Before writing any utility code (path manipulation, string normalization, error wrapping, retry logic, common SQL fragments, percent-encoding, hex formatting, ...), check two places — both are part of the codebase's vocabulary:
 
-Concrete checks:
+1. **In-source helpers** — `grep` the codebase for existing functions with matching or close semantics. If one exists with matching semantics, reuse it. If close, widen it or wrap it — do not duplicate.
 
-- For path/string handling: search for normalization helpers (e.g., `normalize_*`, `to_str`, `canonical`).
-- For SQL: search for shared column lists, query builders, parameter helpers.
-- For error mapping: search for existing `From`/`map_err` patterns.
+2. **Already-imported dependencies** — `grep` the project's dependency manifests (`Cargo.toml`, `package.json`, `pyproject.toml`, `go.mod`, etc.) for crates whose API might already cover the utility. An already-imported dep is *functionally part of the codebase's vocabulary* — using it has zero cost (no new audit, no new dep-evaluation), while reimplementing what it provides is duplication just like reimplementing an in-source helper.
 
-The cost of this check is 60 seconds of `grep`. The cost of duplicating a helper is: divergence when the original changes, two places to update for the next bug fix, reviewer time spent flagging the duplication. Spend the 60 seconds.
+Concrete checks for each:
+
+- For path/string handling: in-source grep `normalize_*`, `to_str`, `canonical`; dep grep for `url`, `percent-encoding`, `path-clean`.
+- For SQL: in-source grep for shared column lists, query builders, parameter helpers; dep check for ORMs / SQL builders like `sqlx`, `diesel`, `rusqlite`.
+- For error mapping: in-source grep `From`/`map_err` patterns; dep check for `thiserror`, `anyhow`, `snafu`.
+- For percent-encoding / URL building: dep check for `url`, `percent-encoding`, `urlencoding`.
+- For retry logic: dep check for `backoff`, `tokio-retry`.
+- For hex / base64: dep check for `hex`, `base64`, `data-encoding`.
+
+The cost of both checks is 60 seconds of `grep`. The cost of duplicating:
+
+- **In-source duplicate:** divergence when the original changes, two places to update for the next bug fix, reviewer time spent flagging the duplication.
+- **Reimplemented dep:** same as above, plus you've shipped less-battle-tested code in a domain (encoding, retry, parsing) where the upstream crate has handled edge cases you haven't thought of.
+
+The exception is *net-new deps*: if the utility crate isn't already imported, adding it is a separate decision (does it clear the project's dep-evaluation bar?). This rule is specifically about *already-imported* crates whose use cost is zero. A net-new dep for a 10-line function is rarely worth it; using an already-imported one for the same purpose almost always is.
+
+**Edge case — partial fit:** if the in-source helper or imported crate has *close* but not *matching* semantics (e.g., a lossy-conversion path-normalizer when you need strict UTF-8 erroring), document the deviation inline before duplicating. A divergent reimplementation with a comment explaining why is honest; silent duplication is debt.
 
 #### a. Implement
 
@@ -217,6 +231,7 @@ If any fail, you have a regression introduced somewhere in the slice chain. Bise
 - "This claim is empirically verified, no need for a regression test." Wrong. Empirical verification is one-shot; CI is permanent. Measurement-only claims silently regress. The fence is the permanent form.
 - `// TODO: figure out later` / `// FIXME: needs work` / `// deferred to a follow-up` — anonymous future-work pointers without tracker IDs. Either file the issue and reference its ID, or fix the thing now. No `TODO(someone someday)` — every TODO gets a `TODO(rivets-XXX)`.
 - "I cited `rivets-abc1` but didn't verify it exists." Phantom tracker references and silent deferrals fail in the same way: future contributors looking at the tracker can't find the deferred work. Run `rivets show <id>` before writing the reference, not after.
+- "I grep'd source files for an existing helper and didn't find one, so I wrote it from scratch." Did you also grep `Cargo.toml` / `package.json` / `pyproject.toml`? An already-imported dependency's API is functionally part of the codebase's vocabulary. Hand-rolling `percent_encode_path` when `percent-encoding = "2.3"` is two lines down in the manifest is the same class of duplication as hand-rolling a function that already exists in `db/files.rs`.
 
 ## What this skill is not
 
