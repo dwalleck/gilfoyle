@@ -28,6 +28,8 @@ This suite reorders the work into a spiral whose every iteration ends with the b
 ## The loop
 
 ```
+interrogated-spec   →  every behavior observable, every criterion measurable
+       ↓ (gate: requester signs off in their own words)
 prove-it-prototype  →  oracle established, probe matches
        ↓ (gate: probe ↔ oracle)
 falsifiable-design  →  every claim has a falsifier
@@ -43,7 +45,7 @@ checkpointed-build  →  per-slice: implement, recheck oracle, recheck budget
                                    →  per-finding: verify, evaluate, accept / modify / reject
 ```
 
-The loop has four mandatory gates that reach *outside the document*. Probe vs oracle. Falsifier vs claim. Budget vs scale. Per-slice oracle recheck. Each gate is a chance to catch a wrong assumption while it's still cheap.
+The loop has five mandatory gates that reach *outside the document*. Spec vs requester. Probe vs oracle. Falsifier vs claim. Budget vs scale. Per-slice oracle recheck. Each gate is a chance to catch a wrong assumption while it's still cheap. The first gate reaches outside the *requester's head*; the rest reach outside the *design document*.
 
 `assessing-review-feedback` applies the same epistemic discipline to *incoming* review comments. A reviewer's finding is a hypothesis with two parts (the bug claim and the fix claim); the skill demands both be verified per finding before applying changes.
 
@@ -51,6 +53,7 @@ The loop has four mandatory gates that reach *outside the document*. Probe vs or
 
 | Skill | Replaces | Purpose |
 |---|---|---|
+| `interrogated-spec` | (nothing — this is new) | Grill the requester one question at a time until every vague noun is resolved, every success criterion is measurable, every edge has a decision, and the requester has signed off in their own words. |
 | `prove-it-prototype` | (nothing — this is new) | Build a probe that runs against the real system, define an independent oracle, refuse to proceed until they agree. |
 | `falsifiable-design` | brainstorming | Produce a design where every claim is paired with an experiment that would prove it wrong; cheapest falsifier runs before approval. |
 | `budgeted-plan` | writing-plans | Decompose into slices, each with mandatory complexity budget, scale budget, and stress fixture. |
@@ -59,6 +62,8 @@ The loop has four mandatory gates that reach *outside the document*. Probe vs or
 | `assessing-review-feedback` | (nothing — this is new) | Treat each PR review finding as a hypothesis with two parts (bug claim + fix claim). Verify both. Decide per finding whether to accept, modify, or reject. Decision log mandatory. |
 
 ## The rules, condensed
+
+0. **No probe without a pinned spec.** Before you probe the system, pin the request. Every vague noun the requester uses ("user", "fast", "soon", "the inbox") is three decisions in a trench coat. Extract each decision before you write a probe — otherwise the probe answers the wrong question.
 
 1. **No design without a probe.** A probe is the smallest possible program that produces the proposed feature's output against the real system. If you can't build one, you don't understand the feature well enough to design it.
 
@@ -114,9 +119,10 @@ The repo is structured as a Claude Code plugin and ships its own marketplace man
 /plugin install /path/to/gilfoyle
 ```
 
-Once installed, the six skills appear in your `Skill` tool's available-skills list. Invoke directly:
+Once installed, the seven skills appear in your `Skill` tool's available-skills list. Invoke directly:
 
 ```
+Skill interrogated-spec
 Skill prove-it-prototype
 Skill falsifiable-design
 Skill budgeted-plan
@@ -137,7 +143,8 @@ We are not going to write a configuration system. You can configure your tools.
 
 At the start of any non-trivial work:
 
-- **New feature** on top of an existing system (resolver fix, schema change, API surface) → start with `prove-it-prototype`. Don't skip to design until probe and oracle agree.
+- **Feature request from a human in natural language** ("we want unread count on the inbox," "make permissions auditable," "users are complaining about X") → start with `interrogated-spec`. Pin the spec before you probe the system.
+- **New feature** on top of an existing system, with a spec already pinned → start with `prove-it-prototype`. Don't skip to design until probe and oracle agree.
 - **Bug fix that spans multiple files** → start with `prove-it-prototype` against the bug itself; the probe + oracle pair becomes the regression test.
 - **Refactor that changes public surface** → start with `falsifiable-design`; the cheapest falsifier is the smoke test that the refactor doesn't lose any caller.
 - **PR review feedback arrives** → invoke `assessing-review-feedback` BEFORE applying any reviewer suggestions.

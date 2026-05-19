@@ -1,7 +1,7 @@
 {
   "name": "gilfoyle",
-  "version": "1.0.3",
-  "description": "A skill suite for shipping reliable software, not fastest. Six skills whose every gate reaches outside the design document.",
+  "version": "1.1.0",
+  "description": "A skill suite for shipping reliable software, not fastest. Seven skills whose every gate reaches outside the design document — or, in the first gate's case, outside the requester's head.",
   "author": {
     "name": "Daryl Walleck",
     "url": "https://github.com/dwalleck"
