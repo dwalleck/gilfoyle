@@ -173,6 +173,7 @@ The next skill — `budgeted-plan` — refuses to run until:
 - [ ] **Every production-reachable input shape is covered by at least one claim** — or explicitly noted as out-of-scope with a one-sentence justification
 - [ ] Every claim in the design has a falsifier in the table
 - [ ] Every falsifier names an independent oracle
+- [ ] **Every falsifier names a specific buggy implementation that would make it fail** (non-vacuity) — if you can't name one, the fence is decoration; see § 7 item 3
 - [ ] **Every claim has a distinct verifiable output** — if claim N fails, the oracle's output tells you it was claim N specifically (not "something in the feature broke")
 - [ ] **Every measurement-based claim has a `Regression fence` entry** pointing at a deterministic CI test, OR explicit `manual` with documented user approval
 - [ ] **Every deferral / out-of-scope / tracked-elsewhere reference in the design names a verified tracker ID** (existence checked, not assumed); deferrals without a citation have had their issue filed
