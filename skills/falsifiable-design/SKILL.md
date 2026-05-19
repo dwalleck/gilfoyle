@@ -124,13 +124,20 @@ After writing the design but before showing it to the user:
 
 2. **Falsifier independence.** For each falsifier, is its oracle independent of the system under test? If a falsifier's oracle is "another part of this feature," replace it.
 
-3. **Per-claim verification distinctness.** Each claim must have a *distinct* falsifier output — meaning if claim N fails, you can tell *which claim* failed by reading the oracle's output, without guessing. If two claims share a single oracle that produces one yes/no answer covering both, you have lost the ability to localize failures. Either split the oracle into per-claim outputs (e.g. distinct sections of a probe script, or distinct asserts in a test suite) or merge the claims into one.
+3. **Falsifier non-vacuity.** For each falsifier, name a specific buggy implementation that would make it fail. If you can't, the fence is decoration — it passes today and would pass in any future where the bug returns. Two recurring shapes to watch for:
 
-4. **Cost distribution.** Any claims whose only falsifier is expensive (requires production data, multi-day soak)? Those are claims you cannot afford to be wrong about cheaply. Either find a cheaper falsifier or move that claim to "things we test in staging" with a written acceptance of the risk.
+   - **Predicates the schema makes mutually exclusive.** Combining `column LIKE 'X%'` AND `other_column IS NOT NULL` looks like a tighter filter, but if the schema's UPDATE atomically nulls one column when setting the other (e.g., `UPDATE refs SET symbol_id = ?, reference_name = NULL`), the two predicates can never both hold. The filter is vacuous regardless of bug.
+   - **Disjunctive assertions where one disjunct is also asserted standalone.** `assert!(A == 0 || B >= 1); assert!(B >= 1);` — the first cannot catch any bug the second misses. Looks like defense-in-depth, isn't.
 
-5. **Negative space.** What's NOT in this design? Write down at least three things the feature deliberately does not do. If you can't think of three, the design has no boundaries.
+   The TDD-inversion test surfaces both: if no code mutation makes the new assertion fail without also failing a *different* assertion in the same fence, it's vacuous. Cut or rewrite. Distinct from #3 (independence is about whether the oracle lives outside the SUT; non-vacuity is about whether the oracle can fire at all) and from #4 below (distinctness is about which claim failed; non-vacuity is about whether any claim *can* fail).
 
-6. **Tracker references.** Final safety net for the tracker discipline. Grep the design for the trigger-phrase list above. Each match must either cite a verified tracker ID OR be settled rationale (case 3). If you wrote a deferral phrase at any point during steps 1-7 without verifying or filing, do it now. A design that ships with un-tracked deferrals is shipping invisible technical debt.
+4. **Per-claim verification distinctness.** Each claim must have a *distinct* falsifier output — meaning if claim N fails, you can tell *which claim* failed by reading the oracle's output, without guessing. If two claims share a single oracle that produces one yes/no answer covering both, you have lost the ability to localize failures. Either split the oracle into per-claim outputs (e.g. distinct sections of a probe script, or distinct asserts in a test suite) or merge the claims into one.
+
+5. **Cost distribution.** Any claims whose only falsifier is expensive (requires production data, multi-day soak)? Those are claims you cannot afford to be wrong about cheaply. Either find a cheaper falsifier or move that claim to "things we test in staging" with a written acceptance of the risk.
+
+6. **Negative space.** What's NOT in this design? Write down at least three things the feature deliberately does not do. If you can't think of three, the design has no boundaries.
+
+7. **Tracker references.** Final safety net for the tracker discipline. Grep the design for the trigger-phrase list above. Each match must either cite a verified tracker ID OR be settled rationale (case 3). If you wrote a deferral phrase at any point during steps 1-7 without verifying or filing, do it now. A design that ships with un-tracked deferrals is shipping invisible technical debt.
 
 ### 8. Write the design doc
 

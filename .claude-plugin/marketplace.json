@@ -10,7 +10,7 @@
     {
       "name": "gilfoyle",
       "description": "Six skills (prove-it-prototype, falsifiable-design, budgeted-plan, checkpointed-build, tdd-scoped, assessing-review-feedback) that force every loop iteration to touch reality and an independent oracle before the design document signs off on itself.",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "source": "./",
       "author": {
         "name": "Daryl Walleck",
