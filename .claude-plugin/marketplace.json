@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "gilfoyle",
-  "description": "A skill suite for shipping reliable software, not fastest. Six skills whose every gate reaches outside the design document.",
+  "description": "A skill suite for shipping reliable software, not fastest. Seven skills whose every gate reaches outside the design document — or, in the first gate's case, outside the requester's head.",
   "owner": {
     "name": "Daryl Walleck",
     "url": "https://github.com/dwalleck"
@@ -9,8 +9,8 @@
   "plugins": [
     {
       "name": "gilfoyle",
-      "description": "Six skills (prove-it-prototype, falsifiable-design, budgeted-plan, checkpointed-build, tdd-scoped, assessing-review-feedback) that force every loop iteration to touch reality and an independent oracle before the design document signs off on itself.",
-      "version": "1.0.2",
+      "description": "Seven skills (interrogated-spec, prove-it-prototype, falsifiable-design, budgeted-plan, checkpointed-build, tdd-scoped, assessing-review-feedback) that force every loop iteration to touch reality and an independent oracle before the design document signs off on itself — starting with the requester's own words.",
+      "version": "1.1.0",
       "source": "./",
       "author": {
         "name": "Daryl Walleck",

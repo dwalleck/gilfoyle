@@ -24,6 +24,8 @@ Always, when adding a feature on top of a system whose behavior you can observe 
 
 Skip only when writing a small standalone utility with no underlying system to depend on. If you're not sure whether to skip: don't skip.
 
+**Upstream check.** If the feature request originated from a human in natural language (a stakeholder ask, a Linear ticket of two sentences, a Slack message), [[interrogated-spec]] runs *before* this skill. You cannot probe a feature whose definition is still mush — the probe will faithfully answer the wrong question. Confirm the upstream artifact exists at `.<feature-slug>/spec.md` with a verbatim sign-off line before proceeding.
+
 ## What counts as a probe
 
 - Standalone script in the simplest language available.
