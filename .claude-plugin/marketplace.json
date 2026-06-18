@@ -10,7 +10,7 @@
     {
       "name": "gilfoyle",
       "description": "Seven skills (interrogated-spec, prove-it-prototype, falsifiable-design, budgeted-plan, checkpointed-build, tdd-scoped, assessing-review-feedback) that force every loop iteration to touch reality and an independent oracle before the design document signs off on itself — starting with the requester's own words.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "source": "./",
       "author": {
         "name": "Daryl Walleck",

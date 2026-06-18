@@ -72,6 +72,24 @@ The cost of this step is 10 minutes. The cost of skipping it: claims cover the s
 
 Red flag: if you can't list ≥3 shapes, you have not enumerated yet. Reach harder. The `None` branch counts, the empty case counts, the boundary value counts.
 
+### 2b. Sweep removed invariants (when the change is subtractive)
+
+Step 2 anchors claims to *input* space. This step anchors them to *invariant* space — the assumptions elsewhere in the system that held **only** because of something this change takes away.
+
+First, classify the change's core move. It is **subtractive** when its essence is removing a constraint: a serialization point (a lock, a single-consumer loop, an `await` that blocked progress), a guard, a validation, a precondition, an ordering guarantee, an at-most-one / uniqueness property. A change that *looks* additive ("+1 capability") is often subtractive underneath ("−1 invariant") — freeing a loop to handle new commands **removes the mutual exclusion that loop provided**. If the change is purely additive (a new path that relaxes no existing constraint), write one sentence saying so and skip to step 3.
+
+If it is subtractive, enumerate what the removed constraint was silently enforcing:
+
+- **Name the constraint** you are removing, in one sentence.
+- **List the "can't happen" facts it guaranteed for free, and walk the chain.** A blocking loop guarantees "no other command runs during a turn" → "this mutable field can't change mid-operation" → "anything that reads that field later sees a consistent value." Each link is a separate assumption.
+- For each fact, ask: **after the change, can the thing it forbade now happen?** Grep every reader and mutator of the state the constraint protected. Each one that can now interleave is a candidate broken invariant.
+
+Each production-reachable broken invariant becomes a claim in step 3 — phrased as the property that must *still* hold ("a cancel issued after a mid-operation session swap still targets the original session") — and gets its own falsifier in step 4 (whose non-vacuity test, § 7 item 3, is the buggy implementation that drops the invariant). Invariants you judge still-safe are noted with a one-sentence reason, same as out-of-scope input shapes.
+
+The cost is 10 minutes. The cost of skipping it: every fence you write tests the new behavior you *intended*, all of them pass, and the bug ships in the negative space — the assumption that broke because you removed the thing quietly holding it up. Concrete example: driving a previously-blocking call off a single-consumer loop frees the loop to process *every* queued command mid-operation, not just the ones the change was written for; a sibling command that mutates a shared id now runs mid-operation, and a later read of that id (a cancel, a mode-set) silently targets the wrong thing. No happy-path fence catches it — the change did exactly what it claimed, and more.
+
+Red flag: if your change relaxes concurrency or ordering and your claim list only describes new capability, you have not swept. The question is never "does the new thing work?" — it's "what stopped being mutually exclusive, and who assumed it wasn't?"
+
 ### 3. Enumerate claims
 
 Write the design as a numbered list of claims. One sentence each. If a claim takes more than one sentence, split it. For each input shape from step 2, ensure at least one claim covers it.
@@ -139,6 +157,8 @@ After writing the design but before showing it to the user:
 
 7. **Tracker references.** Final safety net for the tracker discipline. Grep the design for the trigger-phrase list above. Each match must either cite a verified tracker ID OR be settled rationale (case 3). If you wrote a deferral phrase at any point during steps 1-7 without verifying or filing, do it now. A design that ships with un-tracked deferrals is shipping invisible technical debt.
 
+8. **Removed-invariant coverage.** If step 2b classified the change as subtractive, does every broken invariant it surfaced have a claim and a falsifier? A subtractive change whose claim list describes only new capability has skipped the sweep — go back to 2b. (Distinct from #6 Negative space: negative space is what the feature *won't* do on purpose; a removed invariant is what silently *stopped being true*.)
+
 ### 8. Write the design doc
 
 Standard sections — purpose, architecture, components — with one mandatory new section:
@@ -171,6 +191,7 @@ The fence's fixture should embed the bug class being fixed. For a "hardcoded-pat
 The next skill — `budgeted-plan` — refuses to run until:
 
 - [ ] **Every production-reachable input shape is covered by at least one claim** — or explicitly noted as out-of-scope with a one-sentence justification
+- [ ] **If the change is subtractive (removes a serialization point, guard, ordering, or uniqueness property), every invariant the removed constraint guaranteed is covered by a still-holds claim** — or noted safe with a one-sentence reason (step 2b)
 - [ ] Every claim in the design has a falsifier in the table
 - [ ] Every falsifier names an independent oracle
 - [ ] **Every falsifier names a specific buggy implementation that would make it fail** (non-vacuity) — if you can't name one, the fence is decoration; see § 7 item 3
@@ -188,6 +209,7 @@ The next skill — `budgeted-plan` — refuses to run until:
 - "Negative space is hard to enumerate." Then the design has no boundaries. That is a planning bug worse than any algorithm bug.
 - "We'll write the falsifiers when we get to that section." No. Falsifiers are part of the design, not its appendix.
 - "One probe run covers all claims; if it passes, all claims pass." Wrong. If the probe passes you learn nothing per-claim. If it fails, you don't know which claim failed. Each claim needs its own observable output. Split the probe into per-claim sections, or write per-claim asserts. Localization at observation time is worth more than terseness at design time.
+- "It's an additive feature, nothing to sweep." Check the core move, not the framing. Freeing a loop, dropping a lock, relaxing an ordering, or widening what's reachable is *subtractive* — it deletes a "can't happen" that code elsewhere relied on. Run the removed-invariant sweep (step 2b).
 
 ## What this skill is not
 
