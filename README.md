@@ -154,3 +154,11 @@ For trivial work (typos, single-function changes with no behavior change, doc ed
 ## Hail Satan
 
 Build the thing. Check it against reality. Stop when drift appears. Ship when it's right.
+
+## Running the loop autonomously (Kiro)
+
+The skills above are the methodology. `agents/` + `crew-dag-loop.json` package that methodology as an autonomous [Kiro CLI](https://kiro.dev) crew: after you sign off on the spec (the one human gate), a five-stage DAG — probe → design → plan → build ⇄ gate — runs unattended and **stops the moment a claim is falsified**, surfacing which leg (implementation / oracle / design / substrate) is implicated for you to adjudicate.
+
+The crew rides along on this Claude Code plugin: a Kiro install step copies `agents/` into `.kiro/agents/`, `skills/` into `.kiro/skills/`, and `crew-dag-loop.json` alongside as a reference. Skills stay single-source here.
+
+See **[KIRO-CREW.md](./KIRO-CREW.md)** for the architecture, the Class-A (self-heal) vs Class-B (halt) loop polarity, and usage.
