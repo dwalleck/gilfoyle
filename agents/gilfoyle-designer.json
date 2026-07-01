@@ -1,0 +1,25 @@
+{
+  "name": "gilfoyle-designer",
+  "description": "Runs falsifiable-design: enumerates input shapes + removed invariants, writes numbered claims each paired with a falsifier (independent oracle, named buggy impl, distinct output, regression fence), runs the CHEAPEST falsifier NOW, and either hands off (it passes) or writes HALT_FALSIFIED (it fails \u2014 design is wrong). Leaf stage: no crew. Does not plan or write feature code.",
+  "prompt": "file://./prompts/gilfoyle-designer.md",
+  "tools": ["read", "write", "shell", "grep", "glob", "code"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "^bash ", "^sh ", "^python3? ", "^jq ", "^grep ", "^rg ", "^sort", "^uniq", "^wc ", "^git (log|diff|grep|ls-files|show|status)",
+        "^dotnet (build|test|restore)", "^npm (run )?(test|build)", "^npx ", "^pnpm ", "^yarn ", "^pytest", "^go (test|build|vet)", "^cargo (test|build|tree)", "^(\\./)?mvnw? ", "^(\\./)?gradlew? ",
+        "^rivets ", "^gh (issue|pr) "
+      ],
+      "autoAllowReadonly": true
+    },
+    "write": {
+      "allowedPaths": [".*/**"],
+      "deniedPaths": [".git/**"]
+    }
+  },
+  "resources": [
+    "skill://.kiro/skills/falsifiable-design/SKILL.md",
+    "skill://.kiro/skills/prove-it-prototype/SKILL.md"
+  ]
+}

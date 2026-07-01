@@ -1,0 +1,27 @@
+{
+  "name": "gilfoyle-orchestrator",
+  "description": "Orchestrates the gilfoyle build spiral: runs interrogated-spec interactively (HUMAN gate) then submits the autonomous probe->design->plan->build->gate crew, and surfaces HALT_FALSIFIED to the human instead of retrying. The ONLY agent in this set permitted to run a crew; the stage agents are leaves. Use when asked to build a feature the gilfoyle way, or to run the falsifiable build loop.",
+  "prompt": "file://./prompts/gilfoyle-orchestrator.md",
+  "tools": ["read", "write", "shell", "grep", "glob", "code", "subagent"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "toolsSettings": {
+    "crew": {
+      "availableAgents": ["gilfoyle-prober", "gilfoyle-designer", "gilfoyle-planner", "gilfoyle-implementer", "gilfoyle-gatekeeper"],
+      "trustedAgents": ["gilfoyle-prober", "gilfoyle-designer", "gilfoyle-planner", "gilfoyle-implementer", "gilfoyle-gatekeeper"]
+    },
+    "shell": {
+      "allowedCommands": [
+        "^grep ", "^rg ", "^git (log|diff|grep|ls-files|show|status)", "^rivets ", "^gh (issue|pr) "
+      ],
+      "autoAllowReadonly": true
+    },
+    "write": {
+      "allowedPaths": [".*/**"],
+      "deniedPaths": [".git/**"]
+    }
+  },
+  "resources": [
+    "skill://.kiro/skills/interrogated-spec/SKILL.md",
+    "skill://.kiro/skills/assessing-review-feedback/SKILL.md"
+  ]
+}

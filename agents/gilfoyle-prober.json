@@ -1,0 +1,24 @@
+{
+  "name": "gilfoyle-prober",
+  "description": "Runs prove-it-prototype: builds a <=50-line probe against the real codebase and an INDEPENDENT oracle, compares them, and either hands off (agreement) or writes HALT_FALSIFIED (substrate suspect). Leaf stage: no crew, no subagent spawning; runs probes/oracles inline via shell. Does not design, plan, or write feature code.",
+  "prompt": "file://./prompts/gilfoyle-prober.md",
+  "tools": ["read", "write", "shell", "grep", "glob", "code"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "^bash ", "^sh ", "^python3? ", "^jq ", "^grep ", "^rg ", "^sort", "^uniq", "^wc ", "^git (log|diff|grep|ls-files|show|status)",
+        "^dotnet (build|test|restore)", "^npm (run )?(test|build)", "^npx ", "^pnpm ", "^yarn ", "^pytest", "^go (test|build|vet)", "^cargo (test|build|tree)", "^(\\./)?mvnw? ", "^(\\./)?gradlew? ",
+        "^rivets ", "^gh (issue|pr) "
+      ],
+      "autoAllowReadonly": true
+    },
+    "write": {
+      "allowedPaths": [".*/**", "*.sh", "*.py", "probe*"],
+      "deniedPaths": [".git/**"]
+    }
+  },
+  "resources": [
+    "skill://.kiro/skills/prove-it-prototype/SKILL.md"
+  ]
+}

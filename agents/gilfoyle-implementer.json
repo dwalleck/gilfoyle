@@ -1,0 +1,26 @@
+{
+  "name": "gilfoyle-implementer",
+  "description": "Runs checkpointed-build with tdd-scoped inside each slice: implements slices one at a time, running the per-slice gates (unit tests, stress fixture, oracle re-run, budget, regression fence) INLINE and committing one slice per gate-green. Self-heals Class-A misses with bounded retries; writes HALT_FALSIFIED on Class-B (oracle drift / fence failure / undecided plan). Leaf stage: no crew; never edits the oracle or design.",
+  "prompt": "file://./prompts/gilfoyle-implementer.md",
+  "tools": ["read", "write", "shell", "grep", "glob", "code"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "^bash ", "^sh ", "^python3? ", "^jq ", "^grep ", "^rg ", "^sort", "^uniq", "^wc ",
+        "^git (add|commit|log|diff|grep|ls-files|show|status|fetch|merge|rebase)",
+        "^dotnet (build|test|restore|sln|add|format)", "^npm (run )?(test|build|ci|install)", "^npx ", "^pnpm ", "^yarn ", "^pytest", "^python -m ", "^go (test|build|vet)", "^cargo (test|build|fmt|clippy|nextest)", "^(\\./)?mvnw? ", "^(\\./)?gradlew? ",
+        "^time ", "^hyperfine ", "^rivets ", "^gh (issue|pr) "
+      ],
+      "autoAllowReadonly": true
+    },
+    "write": {
+      "allowedPaths": ["**/*"],
+      "deniedPaths": [".git/**"]
+    }
+  },
+  "resources": [
+    "skill://.kiro/skills/checkpointed-build/SKILL.md",
+    "skill://.kiro/skills/tdd-scoped/SKILL.md"
+  ]
+}

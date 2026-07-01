@@ -1,0 +1,24 @@
+{
+  "name": "gilfoyle-gatekeeper",
+  "description": "Runs checkpointed-build's FINAL integration check: rebuilds the assembled binary and re-runs every oracle, every falsifier, and every regression fence, then ROUTES the crew via the summary tool. Class-A (implementation behind spec, oracles still agree): summary(changes_needed) + NEEDS_WORK, loops back to build. Class-B (oracle drift / falsifier fires): summary(terminal) + HALT_FALSIFIED, no loop \u2014 the human decides. Leaf stage: no crew; never edits oracles or writes feature code.",
+  "prompt": "file://./prompts/gilfoyle-gatekeeper.md",
+  "tools": ["read", "write", "shell", "grep", "glob", "code"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "toolsSettings": {
+    "shell": {
+      "allowedCommands": [
+        "^bash ", "^sh ", "^python3? ", "^jq ", "^grep ", "^rg ", "^sort", "^uniq", "^wc ", "^git (log|diff|grep|ls-files|show|status)",
+        "^dotnet (build|test|restore)", "^npm (run )?(test|build)", "^npx ", "^pnpm ", "^yarn ", "^pytest", "^go (test|build|vet)", "^cargo (test|build|nextest)", "^(\\./)?mvnw? ", "^(\\./)?gradlew? ",
+        "^time ", "^hyperfine ", "^rivets ", "^gh (issue|pr) "
+      ],
+      "autoAllowReadonly": true
+    },
+    "write": {
+      "allowedPaths": [".*/**"]
+    }
+  },
+  "resources": [
+    "skill://.kiro/skills/checkpointed-build/SKILL.md",
+    "skill://.kiro/skills/falsifiable-design/SKILL.md"
+  ]
+}
