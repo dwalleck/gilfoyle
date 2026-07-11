@@ -111,11 +111,11 @@ Standard TDD discipline (`gilfoyle/tdd-scoped`) for any fix that introduces beha
 
 If a fix turns out to be wrong during implementation, that's another iteration of step 3. Don't ship a fix you no longer believe in just because you already started writing it.
 
-### 6. Decision log
+### 6. Structured decision result
 
-The output of this skill is a decision log. Markdown is fine. A section in the PR description is fine. A comment thread is fine. The form matters less than the existence.
+Return one schema-valid structured result containing the ordered finding decisions. It is the only workflow input to the writer. A human-readable rendering may be attached to a PR, but Markdown/comments never replace the JSON contract and are not parsed for routing.
 
-Example structure:
+Conceptual field mapping:
 
 ```markdown
 ## Review-feedback decisions
@@ -159,6 +159,4 @@ This is also not a license to ignore feedback. If you reject a finding, the rati
 
 ## Output
 
-A decision log committed to the repo or attached to the PR. Plus the actual code changes for accepted / modified findings, each in a separate commit (so the decision log lines up with git history).
-
-If no findings were applied, the decision log alone is the output, and the reasoning is the artifact.
+Return the ordered structured decisions with verification evidence, rationale, severity, affected paths, and tracker IDs for deferred real work. The root passes only accepted/modified items to exactly one implementer, which follows the current budgeted slice/commit contract; findings do not each force an extra commit. Rejected/duplicate items never reach the writer. If no findings are accepted or modified, the structured decision result is still required and no writer launches.

@@ -38,7 +38,7 @@ Always, when adding a feature on top of a system whose behavior you can observe 
 
 Skip only when writing a small standalone utility with no underlying system to depend on. If you're not sure whether to skip: don't skip.
 
-**Upstream check.** If the feature request originated from a human in natural language (a stakeholder ask, a Linear ticket of two sentences, a Slack message), [[interrogated-spec]] runs *before* this skill. You cannot probe a feature whose definition is still mush — the probe will faithfully answer the wrong question. Confirm the upstream artifact exists at `.<feature-slug>/spec.md` with a verbatim sign-off line before proceeding.
+**Upstream check.** If the feature request originated from a human in natural language, [[interrogated-spec]] runs first. Confirm `.gilfoyle/runs/<feature-slug>/spec.json` validates, its canonical digest matches, and its structured sign-off is complete. Missing or stale authorization returns `NEEDS_DECISION`; do not probe.
 
 ## What counts as a probe
 
@@ -68,7 +68,7 @@ Fake oracles, do not accept these:
 
 ## Process
 
-0. **Check the tracker for prior art.** Before probing, search your project's issue tracker for tickets that mention the area or behavior you're about to investigate. Keyword-match on the function names, files, or symptoms involved. Read any matches: prior reviewers may have already filed the bug you're about to re-discover, and existing tickets carry context (PR comments, related fixes, reviewer rationale) that saves probe iterations. **5-minute upper bound — do not rabbit-hole.** Output: a short list of related issue IDs in your probe directory (e.g., `.<issue>/related-issues.md`), or an explicit "no prior art found" note.
+0. **Check the tracker for prior art.** Before probing, search your project's issue tracker for tickets that mention the area or behavior you're about to investigate. Keyword-match on function names, files, or symptoms and read matches. **5-minute upper bound.** Record structured tracker IDs and an explicit empty result in the run's `probe-result`; do not create a Markdown sidecar.
 
    **How to find the tracker** (when not already known), in rough order of likelihood:
    - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` often documents the tracker and how to query it. Check first.
@@ -132,10 +132,4 @@ This is not exploration. Exploration is "let me poke at the system to see how it
 
 ## Output
 
-The artifacts of running this skill:
-
-- `probe.{sh,py,rs,…}` — the probe code, committed to the repo (or attached to the design doc).
-- A one-paragraph "Oracle" section in the design doc, naming the oracle and showing it agrees with the probe on at least one slice.
-- A one-sentence "What I learned" note that wasn't obvious before the probe ran.
-
-If any of those three artifacts don't exist, the skill didn't run. Run it.
+The authoritative output is one schema-valid `probe-result` structured value plus hashed probe/oracle artifacts inside `.gilfoyle/runs/<feature-slug>/`. It must contain the commands, expected/actual per-item comparison, agreement, independent mechanism, related tracker IDs, and one non-trivial learned fact. Probe source remains a run artifact; it is never committed as production code merely to satisfy this skill. Missing fields or stale hashes mean the skill did not run.

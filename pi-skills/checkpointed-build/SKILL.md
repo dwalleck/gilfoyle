@@ -30,8 +30,10 @@ For each slice:
   3. Run the stress fixture.
   4. Run the prove-it-prototype oracle against the binary.
   5. Check the budget.
-  6. If anything in 2-5 fails → STOP. Surface to user. Do not proceed.
-  7. Else → commit. Next slice.
+  6. If anything in 2-5 fails → classify with the independent oracle.
+     - Eligible Class A within the planned file set: self-heal this slice with bounded retries, then rerun every gate.
+     - Class B, ambiguity, out-of-slice work, or contradiction: emit structured `HALT_FALSIFIED`/`NEEDS_DECISION` and stop.
+  7. Else → commit, record SHA, advance state. Next slice.
 ```
 
 Stopping is the most important step. The standard convention is to push through drift and "fix it later." We do not. Drift caught at slice N is cheap. Drift caught at slice N+8 is the entire feature.
@@ -51,7 +53,7 @@ Read the plan once, top to bottom. Flag any slice where:
 - The oracle seems coupled to the implementation. (If the oracle calls the same function the slice implements, it's not an oracle.)
 - A doc-comment precondition has no `debug_assert!`.
 
-Raise concerns with the user *before* writing any code. The plan is allowed to be wrong. Catching it now is free.
+Send concerns to the root supervisor *before* writing code. The plan is allowed to be wrong. Do not ask the end user directly from a leaf and do not proceed while a decision is pending.
 
 ### 2. For each slice, in order
 
@@ -149,30 +151,15 @@ If the slice's claim has `Regression fence: manual` in the design, this step is 
 
 If the slice has no associated regression fence, this step is a no-op — but flag it: a claim shipping with no regression fence is a future-regression risk the design accepted explicitly. Note the absence in the slice's commit message so the next reader sees the gap.
 
-#### f. If anything in (b)–(e2) fails: STOP.
+#### f. If anything in (b)–(e2) fails: classify, then route.
 
-Do not commit. Do not advance to the next slice. Surface to the user:
+Do not commit or advance. Run the independent oracle on the failing input and compare it with the check's predeclared expected output.
 
-```
-Slice N halted.
+- **Eligible Class A:** the check and oracle agree, the implementation is behind, and the fix remains inside the current slice's planned files. Self-heal with the bounded retry budget, then rerun unit, stress, oracle, budget, and fence gates. Record every attempt. If retries exhaust, route non-convergence through the root.
+- **Class B:** the check contradicts the oracle, a falsifier/fence fires, or the fix requires design/oracle/out-of-slice changes. Return structured `HALT_FALSIFIED` with the implicated leg and evidence. Never edit expected values, design, or oracle from this leaf.
+- **Ambiguous or unauthorized:** return structured `NEEDS_DECISION` and contact the root supervisor. The root—not this leaf—asks the user and owns resume routing.
 
-- Unit tests:       [pass | fail with diff]
-- Stress fixture:   [pass | fail with diff]
-- Oracle drift:     [exact items where binary and oracle disagree]
-- Budget:           [actual vs planned, with measurement]
-- Regression fence: [pass | fail with diff | none associated with this slice]
-
-The implementation, the oracle, or the design is wrong. Which is it?
-```
-
-The user picks. Possible outcomes:
-
-- **Implementation is wrong.** Fix. Rerun gates. Stay on slice N.
-- **Oracle is wrong.** Revise the oracle. Re-run `prove-it-prototype` to confirm the revised oracle still agrees with the probe. Stay on slice N.
-- **Design is wrong.** Go back to `falsifiable-design`. The plan may need to be rewritten. Possibly the probe needs to be re-run.
-- **Drift matches a known issue.** Before assuming the design is wrong, search the project's issue tracker for tickets describing the drift. Slice gate failures are often re-discoveries of filed-but-deferred work. Found a match? Document the relationship in the slice's commit message and decide whether to: (a) absorb the known issue's scope into this PR, (b) ship the slice and reference the known issue as related, or (c) pause until the known issue lands. Bounded check: five minutes.
-
-Your job is to surface accurately, not to decide. Decisions about which thing is wrong are not yours to make from inside the executor.
+A five-minute tracker search may identify known drift, but it never authorizes bypassing a gate. Include any verified issue ID in the structured evidence.
 
 #### f2. Stale-reference sweep (after gates pass, before commit)
 
@@ -228,8 +215,8 @@ If any fail, you have a regression introduced somewhere in the slice chain. Bise
 
 ## When to stop and ask, beyond the per-slice gates
 
-- Implementation requires a decision the plan didn't make. Stop. Ask.
-- A test fails for a reason the plan didn't anticipate. Stop. Ask. **Do not "fix" the test to make it pass.**
+- Implementation requires a decision the plan didn't make. Emit `NEEDS_DECISION` and ask the root supervisor.
+- A test fails for a reason the plan didn't anticipate. Classify with the oracle; if ambiguity remains, emit `NEEDS_DECISION`. **Do not "fix" the test to make it pass.**
 - A slice takes more than 2x its estimated time. Stop. Reassess.
 - You're about to add a line of code you couldn't justify out loud to a stranger. Stop. Justify.
 - You opened a PR but `gh pr checks` reports zero checks running within 2 minutes. That's almost certainly a merge conflict — `git diff origin/main --stat` immediately before assuming a CI queue delay.
@@ -253,4 +240,4 @@ This is not "follow the plan." This is "advance the design hypothesis by one sli
 
 ## Output
 
-For each slice, one commit with all gates green. After the final slice, a clean run of every oracle and every falsifier against the assembled binary. If any of those is missing, the skill didn't finish. Finish it.
+For each green slice, return structured receipts followed by exactly one claim-referencing commit SHA and a state-advance event. For a halted slice, return `HALT_FALSIFIED` or `NEEDS_DECISION` with no commit/advance. After the final slice, return receipts for every oracle, falsifier, and regression fence against the assembled binary. Prose or Markdown status alone never satisfies completion.

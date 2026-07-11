@@ -51,7 +51,7 @@ Always, when the feature request originates from a human speaking natural langua
 
 Skip only when:
 - You are extending a feature whose spec was interrogated in a previous round and the change is a literal subset.
-- The input is already an `interrogated-spec.md` from upstream.
+- The input is already a schema-valid, signed `.gilfoyle/runs/<feature-slug>/spec.json` from upstream.
 
 If you are not sure whether to skip: **do not skip.** The cost of an interrogation is twenty minutes. The cost of skipping it is the next two weeks.
 
@@ -69,7 +69,7 @@ Each of these sentences contains between three and eight unresolved decisions. Y
 
 ## The artifact
 
-Write to `.<feature-slug>/spec.md`. The structure:
+Write authoritative data to `.gilfoyle/runs/<feature-slug>/spec.json` and validate it against `.pi/schemas/specification.schema.json`. The legacy Markdown-shaped example below defines field vocabulary only; do not emit Markdown or use its legacy path. Map headings to JSON object fields and table rows to arrays of objects:
 
 ```markdown
 # Feature: <one-line name, ≤ 12 words>
@@ -156,11 +156,11 @@ The string "lgtm," "ok," "sounds good," "ship it," and "yeah whatever" do not sa
 
 This is iterative. Not a survey.
 
-0. **Check the tracker for prior art.** Before interrogating, search your project's tracker for tickets that mention the feature area. Read any matches: the requester may be re-litigating a decision already made. **5-minute upper bound.** Output: short list of related issue IDs in `.<feature-slug>/related-issues.md`, or "no prior art found."
+0. **Check the tracker for prior art.** Before interrogating, search your project's tracker for tickets that mention the feature area. Read any matches: the requester may be re-litigating a decision already made. **5-minute upper bound.** Store a structured related-issue array in `.gilfoyle/runs/<feature-slug>/related-issues.json`, including an explicit empty result when none are found.
 
    For how to find the tracker, see the same section in `prove-it-prototype` — the convention is shared.
 
-1. **Receive the feature request.** Write the requester's exact words at the top of `.<feature-slug>/raw-request.md`. You will return to it. The drift between this and the final spec is the value you produced.
+1. **Receive the feature request.** Store the requester's exact words in `.gilfoyle/runs/<feature-slug>/raw-request.json`. You will return to them. The drift between this and the final specification is the value you produced.
 
 2. **SCAN.** List every vague noun, verb, and adjective. Mark them. Common offenders: "user," "fast," "soon," "the X," "scalable," "secure," "simple," "just," "basically," "like Y but better," "permission," "audit," "metric." Quantifiers without numbers ("a lot of," "many," "rarely"). Time without units ("quickly," "eventually," "real-time").
 
@@ -198,11 +198,11 @@ This is iterative. Not a survey.
 
 9. **NAME THE BOUNDARY.** Force the requester to state what is out of scope. "What about read receipts?" "What about mobile push?" "What about the existing endpoint's response shape?" Every answer either adds to scope (with new behaviors, edges, criteria) or pins the boundary.
 
-10. **WRITE the artifact** per the structure above. Every section populated.
+10. **WRITE the JSON artifact.** Populate every schema field, canonicalize the unsigned payload, validate it, and compute its SHA-256 digest.
 
-11. **PRESENT to the requester.** Have them read it. Ask: "State back to me, in your own words, what this feature does." Capture verbatim into the sign-off section. If their statement does not match the artifact, **the artifact is wrong** — they don't agree with what's written. Return to step 5.
+11. **PRESENT to the requester.** Render the validated JSON as a human-readable view without creating a second authoritative artifact. Run the cold spot-check and ask: "State back to me, in your own words, what this feature does." Capture confirmation text and verbatim answers in `spec.json`. A mismatch returns to step 5.
 
-12. **SIGN-OFF GATE.** The requester typed the spec back. The strings match. Date the artifact. Now and only now, hand off to `prove-it-prototype`.
+12. **SIGN-OFF GATE.** Revalidate the completed object, record the UTC timestamp and digest, and set the structured decision to `CONTINUE`. A missing/mismatched answer or digest sets `NEEDS_DECISION`; no autonomous stage launches.
 
 ## Refusal triggers — stop the interrogation and report
 
@@ -255,10 +255,10 @@ Do not be cruel. Be unmoved. There is a difference. The goal is not to make the 
 
 When the artifact is complete and signed:
 
-1. Confirm the file path: `.<feature-slug>/spec.md`.
-2. Confirm the decisions-log table is non-empty.
-3. Confirm the sign-off section has the requester's verbatim words.
-4. Invoke `prove-it-prototype` with that path. The probe and oracle should be answering questions FROM this spec. If they aren't, this spec was not specific enough — return to step 4.
+1. Confirm `.gilfoyle/runs/<feature-slug>/spec.json` resolves inside the run root.
+2. Validate the decisions array is non-empty and every required behavior/edge/constraint field is populated.
+3. Recompute the canonical unsigned-payload SHA-256 and match the stored digest, confirmation text, timestamp, and cold spot-check answers.
+4. Return the schema-valid structured result to the root. The root invokes `prove-it-prototype` with the JSON path only on `CONTINUE`; otherwise it remains `NEEDS_DECISION`.
 
 ## Anti-patterns
 
