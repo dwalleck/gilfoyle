@@ -1,0 +1,256 @@
+---
+name: checkpointed-build
+description: Replaces executing-plans. Executes slices one at a time. After each slice, runs the slice's stress fixture AND the prove-it-prototype oracle against the binary AND the budget check. If any of those fail, STOPS and surfaces the drift to the user. Treats the plan as a hypothesis, not a contract.
+---
+
+# checkpointed-build
+
+## Pi JSON contract override
+
+This independent Pi scope keeps the methodology below and strengthens its machine/commit contract.
+
+- The `gilfoyle-implementer` is the sole production writer; all other leaves and validators are read-only.
+- Read the accepted plan and current `run-state.json`; implement one slice at a time within its exact planned file set.
+- A green slice requires passing receipts for unit tests, adversarial stress fixture, rebuilt-binary oracle comparison, loop/wall budget, and regression fence.
+- Every receipt carries command, exit code, expected/actual output, artifact hashes, acceptance provenance, and lifecycle IDs.
+- Before committing, reject missing/failed receipts, stale digests, unrelated staged paths, or a message lacking the design-claim key.
+- Stage explicit planned paths only; `git add -A` and `git add .` are forbidden.
+- Create exactly one commit after all gates pass, then record the commit SHA before state advances.
+- Eligible Class A may self-heal only within the current slice; Class B, out-of-slice work, ambiguity, or oracle/check contradiction halts.
+- Machine handoffs use `structured_output`; Markdown status files are not authoritative in the Pi path.
+
+You are not typing the plan. You are advancing the design hypothesis by one slice. After each slice, you go back to reality and check whether the design is still standing.
+
+## The rule
+
+```
+For each slice:
+  1. Implement.
+  2. Run unit tests.
+  3. Run the stress fixture.
+  4. Run the prove-it-prototype oracle against the binary.
+  5. Check the budget.
+  6. If anything in 2-5 fails → STOP. Surface to user. Do not proceed.
+  7. Else → commit. Next slice.
+```
+
+Stopping is the most important step. The standard convention is to push through drift and "fix it later." We do not. Drift caught at slice N is cheap. Drift caught at slice N+8 is the entire feature.
+
+## When this skill runs
+
+After `budgeted-plan` has produced a plan with all gates passing. Not before. If there's no plan, you're improvising. We do not improvise.
+
+## Process
+
+### 1. Load the plan. Critique it before starting.
+
+Read the plan once, top to bottom. Flag any slice where:
+
+- The complexity budget seems implausible. (A loop labeled `O(n)` over `files × symbols` is not `O(n)`.)
+- The stress fixture is suspiciously gentle. (A fixture with three items doesn't surface scaling bugs.)
+- The oracle seems coupled to the implementation. (If the oracle calls the same function the slice implements, it's not an oracle.)
+- A doc-comment precondition has no `debug_assert!`.
+
+Raise concerns with the user *before* writing any code. The plan is allowed to be wrong. Catching it now is free.
+
+### 2. For each slice, in order
+
+#### a-1. Impact analysis (before implementing)
+
+If the slice changes the *signature, name, or semantics* of an existing function — public or private — list the callers BEFORE writing the change. The list bounds the change's blast radius and tells you what else this slice must update.
+
+Tooling, in preference order:
+
+1. **Static-analysis tool** (e.g., `tethys callers <Type::method>`, IDE "find usages," `rust-analyzer` references). Cheap, fast, and catches most callers. Use the qualified path when bare names are ambiguous.
+2. **`grep`** for the function name across the codebase. Catches what static analysis missed (string-built dynamic dispatch, doc references, etc.).
+3. **Both, when stakes are high.** Static analysis is the starting point; `grep` is the safety net.
+
+Caveats on the static-analysis tool you're using:
+
+- The tool's coverage is bounded by its own correctness. If you're modifying the resolver, the resolver's caller-analysis is what you're fixing. Use the tool as a HINT generator, not an oracle.
+- Cross-crate edges may be missed or phantom-generated depending on the tool's resolver maturity. For intra-crate calls, accuracy is typically much higher.
+- An empty caller list is suspicious. Either nothing calls the function (dead code — should you delete it?) or the index is stale (re-index and retry).
+
+Output of this step: a short list (caller path + line) committed in the slice's plan or commit message. Future readers see what the change touched.
+
+If the slice is adding a brand-new function with no existing callers, this step is a no-op — note that explicitly so the absence is intentional, not forgetful.
+
+#### a0. Helper search (before implementing)
+
+Before writing any utility code (path manipulation, string normalization, error wrapping, retry logic, common SQL fragments, percent-encoding, hex formatting, ...), check two places — both are part of the codebase's vocabulary:
+
+1. **In-source helpers** — `grep` the codebase for existing functions with matching or close semantics. If one exists with matching semantics, reuse it. If close, widen it or wrap it — do not duplicate.
+
+2. **Already-imported dependencies** — `grep` the project's dependency manifests (`Cargo.toml`, `package.json`, `pyproject.toml`, `go.mod`, etc.) for crates whose API might already cover the utility. An already-imported dep is *functionally part of the codebase's vocabulary* — using it has zero cost (no new audit, no new dep-evaluation), while reimplementing what it provides is duplication just like reimplementing an in-source helper.
+
+Concrete checks for each:
+
+- For path/string handling: in-source grep `normalize_*`, `to_str`, `canonical`; dep grep for `url`, `percent-encoding`, `path-clean`.
+- For SQL: in-source grep for shared column lists, query builders, parameter helpers; dep check for ORMs / SQL builders like `sqlx`, `diesel`, `rusqlite`.
+- For error mapping: in-source grep `From`/`map_err` patterns; dep check for `thiserror`, `anyhow`, `snafu`.
+- For percent-encoding / URL building: dep check for `url`, `percent-encoding`, `urlencoding`.
+- For retry logic: dep check for `backoff`, `tokio-retry`.
+- For hex / base64: dep check for `hex`, `base64`, `data-encoding`.
+
+The cost of both checks is 60 seconds of `grep`. The cost of duplicating:
+
+- **In-source duplicate:** divergence when the original changes, two places to update for the next bug fix, reviewer time spent flagging the duplication.
+- **Reimplemented dep:** same as above, plus you've shipped less-battle-tested code in a domain (encoding, retry, parsing) where the upstream crate has handled edge cases you haven't thought of.
+
+The exception is *net-new deps*: if the utility crate isn't already imported, adding it is a separate decision (does it clear the project's dep-evaluation bar?). This rule is specifically about *already-imported* crates whose use cost is zero. A net-new dep for a 10-line function is rarely worth it; using an already-imported one for the same purpose almost always is.
+
+**Edge case — partial fit:** if the in-source helper or imported crate has *close* but not *matching* semantics (e.g., a lossy-conversion path-normalizer when you need strict UTF-8 erroring), document the deviation inline before duplicating. A divergent reimplementation with a comment explaining why is honest; silent duplication is debt.
+
+#### a. Implement
+
+Write the code. TDD discipline applies for unit tests inside the slice (use `tdd-scoped`). The pre-typed code in the plan is advisory. You are permitted, encouraged even, to deviate if you spot a better algorithm or a missing edge case. The slice's *contract* is its claim, fixture, oracle, and budget — not its code blocks.
+
+#### a2. Symmetry audit (when the slice adds a parallel code path)
+
+If the slice introduces a new branch that parallels an existing one — e.g., a same-crate lookup alongside an existing unscoped lookup, a new retry path alongside an existing one, a new validation that mirrors a check elsewhere — list the existing path's behaviors and confirm the new path matches OR has a written justification for the divergence.
+
+Specific checklist when adding a parallel path:
+
+- **Error handling:** does the new path return the same error variant as the old one for the same failure mode? Or does it silently swallow what the old one logs?
+- **Logging:** does the new path emit `warn!`/`debug!`/`info!` at the same severity as the old one for analogous events?
+- **Fallback behavior:** does the new path fall through, return None, or return Err the same way the old one does?
+- **Caller observability:** can a caller distinguish "new path succeeded" from "new path declined, old path took over" — and is that distinguishability the same as before?
+
+Asymmetry is allowed. Unintentional asymmetry is the bug class this audit catches.
+
+#### b. Run unit tests
+
+`cargo nextest run` or the equivalent for your language. Output must be pristine: no errors, no warnings, no skips outside the documented skip list.
+
+#### c. Run the stress fixture
+
+The fixture from the plan, with the expected outcome from the plan. Compare actual to expected. Exact match required.
+
+#### d. Run the prove-it-prototype oracle against the binary
+
+This is the step you will be most tempted to skip. Do not skip it.
+
+- Rebuild the binary.
+- Run it against the same workspace that the prove-it-prototype probed.
+- Run the oracle against the same workspace.
+- Compare. They must still agree.
+
+If they drift, this slice broke something earlier slices established. That is the highest-priority bug class. Stop here, regardless of whether unit tests pass.
+
+#### e. Check the budget
+
+For every loop the slice introduced, confirm the production-scale cost is what the plan budgeted. For an always-on phase, measure wall-clock against the budget. Use `time`, `hyperfine`, or a benchmark harness. Eyeballing it does not count.
+
+#### e2. Run the slice's regression fence
+
+If the slice corresponds to a claim with a `Regression fence` entry in the falsifiable-design table, run that test specifically and confirm it passes. The fence is the *permanent* form of the falsifier — it should fail when the bug class re-appears and pass otherwise.
+
+If the slice's claim has `Regression fence: manual` in the design, this step is a one-time manual check (do it now, document the result in the slice's commit message).
+
+If the slice has no associated regression fence, this step is a no-op — but flag it: a claim shipping with no regression fence is a future-regression risk the design accepted explicitly. Note the absence in the slice's commit message so the next reader sees the gap.
+
+#### f. If anything in (b)–(e2) fails: STOP.
+
+Do not commit. Do not advance to the next slice. Surface to the user:
+
+```
+Slice N halted.
+
+- Unit tests:       [pass | fail with diff]
+- Stress fixture:   [pass | fail with diff]
+- Oracle drift:     [exact items where binary and oracle disagree]
+- Budget:           [actual vs planned, with measurement]
+- Regression fence: [pass | fail with diff | none associated with this slice]
+
+The implementation, the oracle, or the design is wrong. Which is it?
+```
+
+The user picks. Possible outcomes:
+
+- **Implementation is wrong.** Fix. Rerun gates. Stay on slice N.
+- **Oracle is wrong.** Revise the oracle. Re-run `prove-it-prototype` to confirm the revised oracle still agrees with the probe. Stay on slice N.
+- **Design is wrong.** Go back to `falsifiable-design`. The plan may need to be rewritten. Possibly the probe needs to be re-run.
+- **Drift matches a known issue.** Before assuming the design is wrong, search the project's issue tracker for tickets describing the drift. Slice gate failures are often re-discoveries of filed-but-deferred work. Found a match? Document the relationship in the slice's commit message and decide whether to: (a) absorb the known issue's scope into this PR, (b) ship the slice and reference the known issue as related, or (c) pause until the known issue lands. Bounded check: five minutes.
+
+Your job is to surface accurately, not to decide. Decisions about which thing is wrong are not yours to make from inside the executor.
+
+#### f2. Stale-reference sweep (after gates pass, before commit)
+
+The slice you just landed may have made earlier slice comments out of date. Scan every file modified by this slice — plus the files the slice depends on — for:
+
+- **Forward-reference comments** like `// slice N hardens this` or `// to be implemented in step M`. If the future slice has now landed, rewrite the comment to describe current behavior in present-tense / past-tense factual terms.
+- **Contract discoveries.** If a bug surfaced in this slice revealed a previously-implicit contract (e.g., "this function requires forward-slash paths"), that contract belongs in the function's doc-comment AND, if load-bearing, enforced per the doc-comment-as-contract rule. Update the doc in this same commit, not later.
+- **Renames you should have done.** If this slice changed the semantics of an existing function, ask whether the function's name still describes its behavior. If the name is now misleading (e.g., `search_symbol_by_name` that now refuses ambiguity), rename in this commit. The longer a misleading name persists, the more callers depend on the wrong mental model.
+- **Tracker references in code and commit messages.** Per the tracker discipline introduced in `falsifiable-design`: any `TODO(rivets-XXX)`, `// see rivets-YYY`, `// deferred to rivets-ZZZ` in code — and any "tracked at rivets-N" / "deferred to follow-up" / "out of scope" phrase in the commit message you're about to write — must point at an existing issue whose content covers the deferred work. Run `rivets show <id>` (or tracker equivalent) to verify. If the ID doesn't exist, the issue's description doesn't match the deferral, or the comment has no ID at all, file the issue *now* and update the reference. Anonymous TODOs and phantom tracker IDs rot.
+
+Run `grep` for the slice number, for keywords like "TODO", "later", "future", "deferred", "tracked", and for any comment phrase that anticipated work that's now done. Fix what you find before committing.
+
+#### g. If everything in (b)–(e2) passes: commit
+
+One commit per slice. Commit message references the design claim this slice implements.
+
+#### g2. Drift check (after commit, before the next slice)
+
+Generated and structured files (e.g., `.rivets/issues.jsonl`, `Cargo.lock`, schema dumps, generated client code) silently accumulate divergence from main on long-lived branches. Each tool invocation that mutates them is invisible at commit time; the conflict only surfaces at merge time.
+
+Catch this every slice, not at PR-open time:
+
+```bash
+git fetch origin main
+git diff origin/main --stat | grep -E '\.(jsonl|lock)$|issues\.jsonl|schema'
+```
+
+Flag any of:
+
+- Any divergence on a JSONL or similar append-only file (one issue per line, one log entry per line, etc.) — those almost always conflict
+- Any `Cargo.lock` / `package-lock.json` / `poetry.lock` change
+- Any single-file divergence > 50 lines on a file you don't recognize editing this slice
+
+If anything flagged: merge or rebase from main *before* starting the next slice. Prefer a merge commit (preserves slice history) over a rebase (rewrites it and breaks already-pushed commit hashes if other reviewers are reading them).
+
+**Symptom that means you missed this step:** PR opened, `gh pr checks <N>` reports "no checks reported on the branch," zero workflow runs in the queue. GitHub Actions silently refuses to run `pull_request` workflows on PRs with conflicts and gives no surfaced signal. If you see zero CI activity within ~2 minutes of pushing a non-trivial PR, run `git diff origin/main --stat` — almost always a merge conflict.
+
+### 3. Repeat until all slices complete
+
+### 4. Final integration check
+
+After every slice has passed: rebuild the binary. Run *every* oracle from `prove-it-prototype`, *every* falsifier from `falsifiable-design`, and *every* regression fence in the Falsification table. They must all still pass.
+
+The oracle / falsifier / fence are related but distinct:
+
+- **Oracle** (prove-it-prototype): an independent computation of the same answer as the probe. Used to verify the design's empirical premise.
+- **Falsifier** (falsifiable-design): the experiment that would prove a claim false. Often one-shot.
+- **Regression fence** (falsifiable-design + checkpointed-build): the *permanent* CI form of the falsifier. Catches future regressions.
+
+If the fence is the same artifact as the falsifier (when both are deterministic tests), run it once and count it as both. If the falsifier is a one-shot measurement and the fence is a separate CI test, run the fence here — the falsifier's job ended in the design phase.
+
+If any fail, you have a regression introduced somewhere in the slice chain. Bisect to find which slice. Stop. Surface.
+
+## When to stop and ask, beyond the per-slice gates
+
+- Implementation requires a decision the plan didn't make. Stop. Ask.
+- A test fails for a reason the plan didn't anticipate. Stop. Ask. **Do not "fix" the test to make it pass.**
+- A slice takes more than 2x its estimated time. Stop. Reassess.
+- You're about to add a line of code you couldn't justify out loud to a stranger. Stop. Justify.
+- You opened a PR but `gh pr checks` reports zero checks running within 2 minutes. That's almost certainly a merge conflict — `git diff origin/main --stat` immediately before assuming a CI queue delay.
+
+## Red flags
+
+- "The oracle drifted by one item, I'll fix it on the next slice." No. Drift across slices is silent corruption. Stop now.
+- "Unit tests pass but the integration check is slow. I'll run it at the end." No. The integration check IS the gate. Run it every slice.
+- "The plan said to write this loop, so I wrote this loop, even though I see a better one." Wrong. The plan is advisory. Write the better loop. Note the deviation in the commit message.
+- "I'll batch the next three slices and run gates at the end." No. Each slice gets its own gate. Batching is how drift becomes invisible.
+- "The stress fixture passed but the unit test was wrong, so the test passed." Stop. The unit test was wrong. Fix the test before you advance.
+- "PR is open but CI hasn't started — I'll wait for the queue." Wrong. GitHub Actions doesn't fire workflows on conflicted PRs and gives no surfaced signal. Zero-checks-reported is a conflict fingerprint, not a queue delay. Run `git diff origin/main --stat` first.
+- "This claim is empirically verified, no need for a regression test." Wrong. Empirical verification is one-shot; CI is permanent. Measurement-only claims silently regress. The fence is the permanent form.
+- `// TODO: figure out later` / `// FIXME: needs work` / `// deferred to a follow-up` — anonymous future-work pointers without tracker IDs. Either file the issue and reference its ID, or fix the thing now. No `TODO(someone someday)` — every TODO gets a `TODO(rivets-XXX)`.
+- "I cited `rivets-abc1` but didn't verify it exists." Phantom tracker references and silent deferrals fail in the same way: future contributors looking at the tracker can't find the deferred work. Run `rivets show <id>` before writing the reference, not after.
+- "I grep'd source files for an existing helper and didn't find one, so I wrote it from scratch." Did you also grep `Cargo.toml` / `package.json` / `pyproject.toml`? An already-imported dependency's API is functionally part of the codebase's vocabulary. Hand-rolling `percent_encode_path` when `percent-encoding = "2.3"` is two lines down in the manifest is the same class of duplication as hand-rolling a function that already exists in `db/files.rs`.
+
+## What this skill is not
+
+This is not "follow the plan." This is "advance the design hypothesis by one slice and re-test it against reality." The plan is the current best guess. Reality is the authority. If they disagree, reality wins, and you stop until the user decides whether to revise the implementation, the oracle, or the design.
+
+## Output
+
+For each slice, one commit with all gates green. After the final slice, a clean run of every oracle and every falsifier against the assembled binary. If any of those is missing, the skill didn't finish. Finish it.
