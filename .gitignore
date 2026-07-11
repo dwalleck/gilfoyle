@@ -7,3 +7,13 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Python test artifacts
+__pycache__/
+*.pyc
+
+# Local workflow and evaluation artifacts
+.gilfoyle/runs/
+.pi-native-workflow/
+.pi-subagents/
+skills/interrogated-spec-workspace/
