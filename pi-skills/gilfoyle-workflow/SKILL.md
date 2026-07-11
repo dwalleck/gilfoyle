@@ -10,7 +10,7 @@ The root Pi session owns this workflow. Never delegate orchestration to a child.
 ## Invariants
 
 - Run data is versioned JSON under `.gilfoyle/runs/<feature-slug>/`; Markdown is not authoritative.
-- Refuse autonomous launch unless Git is on an attached branch and tracked/untracked state is clean except ignored run data.
+- Refuse autonomous launch unless Git is on an attached branch and tracked, untracked, and ignored status contains no changes outside these exact local artifact roots: `.gilfoyle/runs/`, `.pi-native-workflow/`, `.pi-subagents/`, and `skills/interrogated-spec-workspace/`. Inspect ignored entries explicitly; `.gitignore` alone is never proof of cleanliness.
 - Validate every result against its `.pi/schemas/` contract, current run ID, signed-spec digest, acceptance evidence, and lifecycle IDs.
 - Launch every leaf with `async: true`, its declared timeout, and fresh artifact-driven context; use `wait()`, never sleep or status polling.
 - Leaf agents never receive `subagent`; `gilfoyle-implementer` is the sole production writer.
