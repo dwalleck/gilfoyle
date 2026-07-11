@@ -1,0 +1,7 @@
+{
+  "packages": [
+    "npm:pi-subagents@0.34.0",
+    "npm:@gotgenes/pi-permission-system@20.3.0"
+  ],
+  "skills": ["../pi-skills"]
+}
