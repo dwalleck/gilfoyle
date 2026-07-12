@@ -21,10 +21,15 @@
     "trackerIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "implicatedLeg": {"enum": ["impl", "oracle", "design", "substrate"]}
   },
+  "allOf": [
+    {"if": {"properties": {"decision": {"const": "CONTINUE"}}}, "then": {"properties": {"agreement": {"const": true}, "probe": {"properties": {"exitCode": {"const": 0}}}, "oracle": {"properties": {"exitCode": {"const": 0}}}, "comparisons": {"not": {"contains": {"properties": {"matches": {"const": false}}, "required": ["matches"]}}}}}},
+    {"if": {"properties": {"decision": {"const": "HALT_FALSIFIED"}}}, "then": {"properties": {"agreement": {"const": false}}, "required": ["implicatedLeg"]}}
+  ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:[\\\\/])(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$"},
     "execution": {"type": "object", "additionalProperties": false, "required": ["command", "exitCode", "output"], "properties": {"command": {"type": "string", "minLength": 1}, "exitCode": {"type": "integer"}, "output": {}, "independentMechanism": {"type": "string", "minLength": 1}}},
     "comparison": {"type": "object", "additionalProperties": false, "required": ["key", "expected", "actual", "matches"], "properties": {"key": {"type": "string", "minLength": 1}, "expected": {}, "actual": {}, "matches": {"type": "boolean"}}},
-    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}}
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"$ref": "#/$defs/relativePath"}, "sha256": {"$ref": "#/$defs/sha256"}}}
   }
 }

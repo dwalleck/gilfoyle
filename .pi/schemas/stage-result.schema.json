@@ -4,7 +4,7 @@
   "title": "Gilfoyle stage result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "runId", "specDigest", "stage", "decision", "lifecycle", "acceptance", "evidence", "artifacts", "summary"],
+  "required": ["version", "runId", "specDigest", "stage", "decision", "classification", "lifecycle", "acceptance", "evidence", "artifacts", "summary"],
   "properties": {
     "version": {"const": 1},
     "runId": {"type": "string", "minLength": 1},
@@ -19,11 +19,19 @@
     "artifacts": {"type": "array", "items": {"$ref": "#/$defs/artifact"}},
     "summary": {"type": "string", "minLength": 1}
   },
+  "allOf": [
+    {"if": {"properties": {"decision": {"enum": ["CONTINUE", "ALL_GREEN"]}}}, "then": {"properties": {"classification": {"const": "none"}, "acceptance": {"properties": {"passed": {"const": true}}}, "evidence": {"not": {"contains": {"properties": {"status": {"enum": ["fail", "blocked"]}}, "required": ["status"]}}}}}},
+    {"if": {"properties": {"decision": {"const": "ALL_GREEN"}}}, "then": {"properties": {"stage": {"const": "gate"}}}},
+    {"if": {"properties": {"decision": {"const": "NEEDS_WORK"}}}, "then": {"properties": {"classification": {"const": "class-a"}}}},
+    {"if": {"properties": {"decision": {"const": "HALT_FALSIFIED"}}}, "then": {"properties": {"classification": {"const": "class-b"}}, "required": ["implicatedLeg"]}},
+    {"if": {"properties": {"decision": {"const": "NEEDS_DECISION"}}}, "then": {"properties": {"classification": {"const": "ambiguous"}}}}
+  ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:[\\\\/])(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$"},
     "lifecycle": {"type": "object", "additionalProperties": false, "required": ["runId", "childId", "state", "startedAt", "endedAt"], "properties": {"runId": {"type": "string", "minLength": 1}, "childId": {"type": "string", "minLength": 1}, "state": {"enum": ["complete", "failed", "paused"]}, "startedAt": {"type": "string", "format": "date-time"}, "endedAt": {"type": "string", "format": "date-time"}}},
     "acceptance": {"type": "object", "additionalProperties": false, "required": ["provenance", "passed"], "properties": {"provenance": {"enum": ["attested", "checked", "verified", "reviewed"]}, "passed": {"type": "boolean"}, "failures": {"type": "array", "items": {"type": "string", "minLength": 1}}}},
     "evidence": {"type": "object", "additionalProperties": false, "required": ["key", "kind", "status", "expected", "actual"], "properties": {"key": {"type": "string", "minLength": 1}, "kind": {"type": "string", "minLength": 1}, "status": {"enum": ["pass", "fail", "blocked"]}, "expected": {}, "actual": {}}},
-    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}}
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"$ref": "#/$defs/relativePath"}, "sha256": {"$ref": "#/$defs/sha256"}}}
   }
 }
