@@ -16,18 +16,25 @@
     "artifacts": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/artifact"}},
     "acceptance": {"$ref": "#/$defs/acceptance"},
     "commitSha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "controlPlaneBefore": {"$ref": "#/$defs/sha256"},
+    "controlPlaneAfter": {"$ref": "#/$defs/sha256"},
     "terminalReason": {"type": "string", "minLength": 1},
     "expected": {},
     "actual": {}
   },
   "allOf": [
-    {"if": {"properties": {"event": {"const": "committed"}}}, "then": {"required": ["commitSha"]}},
-    {"if": {"properties": {"event": {"const": "terminal"}}}, "then": {"required": ["terminalReason"]}}
+    {"if": {"properties": {"event": {"enum": ["completed", "committed", "state-advanced", "terminal"]}}}, "then": {"properties": {"acceptance": {"properties": {"passed": {"const": true}}}}}},
+    {"if": {"properties": {"event": {"const": "completed"}}}, "then": {"properties": {"commands": {"minItems": 1}, "artifacts": {"minItems": 1}}}},
+    {"if": {"properties": {"event": {"const": "committed"}}}, "then": {"required": ["commitSha", "controlPlaneBefore", "controlPlaneAfter"], "properties": {"commands": {"minItems": 1}, "artifacts": {"minItems": 1}}}},
+    {"if": {"properties": {"event": {"const": "state-advanced"}}}, "then": {"required": ["commitSha", "controlPlaneBefore", "controlPlaneAfter"]}},
+    {"if": {"properties": {"event": {"enum": ["failed", "paused"]}}}, "then": {"properties": {"acceptance": {"properties": {"passed": {"const": false}}}}}},
+    {"if": {"properties": {"event": {"const": "terminal"}}}, "then": {"required": ["terminalReason"], "properties": {"artifacts": {"minItems": 1}}}}
   ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:[\\\\/])(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$"},
     "command": {"type": "object", "additionalProperties": false, "required": ["command", "exitCode", "expected", "actual"], "properties": {"command": {"type": "string", "minLength": 1}, "exitCode": {"type": "integer"}, "expected": {}, "actual": {}}},
-    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"$ref": "#/$defs/relativePath"}, "sha256": {"$ref": "#/$defs/sha256"}}},
     "acceptance": {"type": "object", "additionalProperties": false, "required": ["provenance", "passed"], "properties": {"provenance": {"enum": ["attested", "checked", "verified", "reviewed"]}, "passed": {"type": "boolean"}, "failures": {"type": "array", "items": {"type": "string", "minLength": 1}}}}
   }
 }
