@@ -4,7 +4,7 @@
   "title": "Gilfoyle authoritative run state",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "runId", "featureSlug", "specDigest", "state", "currentStage", "iteration", "maxIterations", "createdAt", "updatedAt", "artifacts", "receiptDigests", "lifecycleRunIds", "controlPlaneDigest"],
+  "required": ["version", "runId", "featureSlug", "specDigest", "state", "currentStage", "iteration", "maxIterations", "createdAt", "updatedAt", "artifacts", "receiptLinks", "controlPlaneDigest"],
   "properties": {
     "version": {"const": 1},
     "runId": {"type": "string", "minLength": 1, "maxLength": 128},
@@ -17,8 +17,7 @@
     "createdAt": {"type": "string", "format": "date-time"},
     "updatedAt": {"type": "string", "format": "date-time"},
     "artifacts": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/sha256"}},
-    "receiptDigests": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/sha256"}},
-    "lifecycleRunIds": {"type": "array", "maxItems": 100, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "receiptLinks": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/receiptLink"}},
     "terminalReason": {"type": "string", "minLength": 1},
     "trackerId": {"type": "string", "minLength": 1},
     "controlPlaneDigest": {"$ref": "#/$defs/sha256"},
@@ -26,17 +25,18 @@
   },
   "allOf": [
     {"if": {"properties": {"state": {"enum": ["SPEC_PENDING", "SIGNED"]}}}, "then": {"properties": {"currentStage": {"const": "spec"}}}},
-    {"if": {"properties": {"state": {"const": "PROBING"}}}, "then": {"properties": {"currentStage": {"const": "probe"}, "lifecycleRunIds": {"minItems": 1}}}},
-    {"if": {"properties": {"state": {"const": "DESIGNING"}}}, "then": {"properties": {"currentStage": {"const": "design"}, "lifecycleRunIds": {"minItems": 1}, "receiptDigests": {"minItems": 1}}}},
-    {"if": {"properties": {"state": {"const": "PLANNING"}}}, "then": {"properties": {"currentStage": {"const": "plan"}, "lifecycleRunIds": {"minItems": 1}, "receiptDigests": {"minItems": 1}}}},
-    {"if": {"properties": {"state": {"const": "BUILDING"}}}, "then": {"properties": {"currentStage": {"const": "build"}, "lifecycleRunIds": {"minItems": 1}, "receiptDigests": {"minItems": 1}}, "required": ["headCommit"]}},
-    {"if": {"properties": {"state": {"const": "GATING"}}}, "then": {"properties": {"currentStage": {"const": "gate"}, "lifecycleRunIds": {"minItems": 1}, "receiptDigests": {"minItems": 1}}, "required": ["headCommit"]}},
-    {"if": {"properties": {"state": {"const": "REVIEWING"}}}, "then": {"properties": {"currentStage": {"const": "review"}, "lifecycleRunIds": {"minItems": 1}, "receiptDigests": {"minItems": 1}}, "required": ["headCommit"]}},
-    {"if": {"properties": {"state": {"const": "ALL_GREEN"}}}, "then": {"properties": {"currentStage": {"const": "gate"}, "lifecycleRunIds": {"minItems": 1}, "receiptDigests": {"minItems": 1}}, "required": ["terminalReason", "headCommit"]}},
-    {"if": {"properties": {"state": {"enum": ["HALT_FALSIFIED", "NEEDS_DECISION"]}}}, "then": {"properties": {"lifecycleRunIds": {"minItems": 1}, "receiptDigests": {"minItems": 1}}, "required": ["terminalReason"]}},
+    {"if": {"properties": {"state": {"const": "PROBING"}}}, "then": {"properties": {"currentStage": {"const": "probe"}, "receiptLinks": {"minItems": 1}}}},
+    {"if": {"properties": {"state": {"const": "DESIGNING"}}}, "then": {"properties": {"currentStage": {"const": "design"}, "receiptLinks": {"minItems": 1}}}},
+    {"if": {"properties": {"state": {"const": "PLANNING"}}}, "then": {"properties": {"currentStage": {"const": "plan"}, "receiptLinks": {"minItems": 1}}}},
+    {"if": {"properties": {"state": {"const": "BUILDING"}}}, "then": {"properties": {"currentStage": {"const": "build"}, "receiptLinks": {"minItems": 1}}, "required": ["headCommit"]}},
+    {"if": {"properties": {"state": {"const": "GATING"}}}, "then": {"properties": {"currentStage": {"const": "gate"}, "receiptLinks": {"minItems": 1}}, "required": ["headCommit"]}},
+    {"if": {"properties": {"state": {"const": "REVIEWING"}}}, "then": {"properties": {"currentStage": {"const": "review"}, "receiptLinks": {"minItems": 1}}, "required": ["headCommit"]}},
+    {"if": {"properties": {"state": {"const": "ALL_GREEN"}}}, "then": {"properties": {"currentStage": {"const": "gate"}, "receiptLinks": {"minItems": 1}}, "required": ["terminalReason", "headCommit"]}},
+    {"if": {"properties": {"state": {"enum": ["HALT_FALSIFIED", "NEEDS_DECISION"]}}}, "then": {"properties": {"receiptLinks": {"minItems": 1}}, "required": ["terminalReason"]}},
     {"if": {"properties": {"state": {"const": "HALT_FALSIFIED"}, "iteration": {"const": 5}}}, "then": {"required": ["trackerId"]}}
   ],
   "$defs": {
-    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "receiptLink": {"type": "object", "additionalProperties": false, "required": ["receiptDigest", "lifecycleRunId", "childId", "stage", "event"], "properties": {"receiptDigest": {"$ref": "#/$defs/sha256"}, "lifecycleRunId": {"type": "string", "minLength": 1}, "childId": {"type": "string", "minLength": 1}, "stage": {"enum": ["spec", "probe", "design", "plan", "build", "gate", "review"]}, "event": {"enum": ["started", "completed", "failed", "paused", "committed", "state-advanced", "terminal"]}}}
   }
 }

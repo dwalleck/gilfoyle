@@ -26,7 +26,8 @@
     {"if": {"properties": {"event": {"enum": ["completed", "committed", "state-advanced", "terminal"]}}}, "then": {"properties": {"acceptance": {"properties": {"passed": {"const": true}}}}}},
     {"if": {"properties": {"event": {"const": "completed"}}}, "then": {"properties": {"commands": {"minItems": 1}, "artifacts": {"minItems": 1}}}},
     {"if": {"properties": {"event": {"const": "committed"}}}, "then": {"required": ["commitSha", "controlPlaneBefore", "controlPlaneAfter"], "properties": {"commands": {"minItems": 1}, "artifacts": {"minItems": 1}}}},
-    {"if": {"properties": {"event": {"const": "state-advanced"}}}, "then": {"required": ["commitSha", "controlPlaneBefore", "controlPlaneAfter"]}},
+    {"if": {"properties": {"event": {"const": "state-advanced"}}}, "then": {"required": ["controlPlaneBefore", "controlPlaneAfter"]}},
+    {"if": {"properties": {"event": {"const": "state-advanced"}, "stage": {"const": "build"}}, "required": ["event", "stage"]}, "then": {"required": ["commitSha"]}},
     {"if": {"properties": {"event": {"enum": ["failed", "paused"]}}}, "then": {"properties": {"acceptance": {"properties": {"passed": {"const": false}}}}}},
     {"if": {"properties": {"event": {"const": "terminal"}}}, "then": {"required": ["terminalReason"], "properties": {"artifacts": {"minItems": 1}}}}
   ],
