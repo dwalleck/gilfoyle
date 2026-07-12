@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gilfoyle.local/schemas/probe-result.schema.json",
+  "title": "Gilfoyle probe result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "specDigest", "stage", "decision", "question", "probe", "oracle", "comparisons", "agreement", "learnedFact", "artifacts", "trackerIds"],
+  "properties": {
+    "version": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "specDigest": {"$ref": "#/$defs/sha256"},
+    "stage": {"const": "probe"},
+    "decision": {"enum": ["CONTINUE", "HALT_FALSIFIED", "NEEDS_DECISION"]},
+    "question": {"type": "string", "minLength": 1},
+    "probe": {"$ref": "#/$defs/execution"},
+    "oracle": {"allOf": [{"$ref": "#/$defs/execution"}, {"type": "object", "required": ["independentMechanism"]}]},
+    "comparisons": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/comparison"}},
+    "agreement": {"type": "boolean"},
+    "learnedFact": {"type": "string", "minLength": 1},
+    "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/artifact"}},
+    "trackerIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "implicatedLeg": {"enum": ["impl", "oracle", "design", "substrate"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "execution": {"type": "object", "additionalProperties": false, "required": ["command", "exitCode", "output"], "properties": {"command": {"type": "string", "minLength": 1}, "exitCode": {"type": "integer"}, "output": {}, "independentMechanism": {"type": "string", "minLength": 1}}},
+    "comparison": {"type": "object", "additionalProperties": false, "required": ["key", "expected", "actual", "matches"], "properties": {"key": {"type": "string", "minLength": 1}, "expected": {}, "actual": {}, "matches": {"type": "boolean"}}},
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}}
+  }
+}
