@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gilfoyle.local/schemas/receipt.schema.json",
+  "title": "Gilfoyle append-only evidence receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "childId", "stage", "event", "timestampUtc", "commands", "artifacts", "acceptance"],
+  "properties": {
+    "version": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "childId": {"type": "string", "minLength": 1},
+    "stage": {"enum": ["spec", "probe", "design", "plan", "build", "gate", "review"]},
+    "event": {"enum": ["started", "completed", "failed", "paused", "committed", "state-advanced", "terminal"]},
+    "timestampUtc": {"type": "string", "format": "date-time"},
+    "commands": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/command"}},
+    "artifacts": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/artifact"}},
+    "acceptance": {"$ref": "#/$defs/acceptance"},
+    "commitSha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "terminalReason": {"type": "string", "minLength": 1},
+    "expected": {},
+    "actual": {}
+  },
+  "allOf": [
+    {"if": {"properties": {"event": {"const": "committed"}}}, "then": {"required": ["commitSha"]}},
+    {"if": {"properties": {"event": {"const": "terminal"}}}, "then": {"required": ["terminalReason"]}}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "command": {"type": "object", "additionalProperties": false, "required": ["command", "exitCode", "expected", "actual"], "properties": {"command": {"type": "string", "minLength": 1}, "exitCode": {"type": "integer"}, "expected": {}, "actual": {}}},
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}},
+    "acceptance": {"type": "object", "additionalProperties": false, "required": ["provenance", "passed"], "properties": {"provenance": {"enum": ["attested", "checked", "verified", "reviewed"]}, "passed": {"type": "boolean"}, "failures": {"type": "array", "items": {"type": "string", "minLength": 1}}}}
+  }
+}
