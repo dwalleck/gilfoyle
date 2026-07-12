@@ -26,6 +26,10 @@ class LivePermissionTests(unittest.TestCase):
             json.dumps({"skills": ["../pi-skills"]}), encoding="utf-8"
         )
         subprocess.run(["git", "init", "-q"], cwd=self.fixture, check=True)
+        subprocess.run(["git", "config", "user.email", "probe@example.com"], cwd=self.fixture, check=True)
+        subprocess.run(["git", "config", "user.name", "Probe"], cwd=self.fixture, check=True)
+        subprocess.run(["git", "add", ".pi", "pi-skills"], cwd=self.fixture, check=True)
+        subprocess.run(["git", "commit", "-qm", "fixture"], cwd=self.fixture, check=True)
         pi = shutil.which("pi.cmd") or shutil.which("pi")
         if pi is None:
             raise RuntimeError("pi executable not found")
@@ -39,11 +43,11 @@ class LivePermissionTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.fixture, ignore_errors=True)
 
-    def run_agent(self, agent, task):
+    def run_agent(self, agent, task, cwd=None):
         command = f'/run {agent} "{task}"'
         return subprocess.run(
             [self.pi, "--approve", "--no-session", "-p", command],
-            cwd=self.fixture,
+            cwd=cwd or self.fixture,
             env=self.env,
             text=True,
             capture_output=True,
@@ -59,6 +63,36 @@ class LivePermissionTests(unittest.TestCase):
             )
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertFalse((self.fixture / target).exists(), agent)
+
+    def test_shell_mutation_is_confined_to_worktree(self):
+        worktree = self.fixture.parent / f"{self.fixture.name}-isolation"
+        subprocess.run(
+            ["git", "worktree", "add", "-q", "--detach", str(worktree), "HEAD"],
+            cwd=self.fixture,
+            check=True,
+        )
+        target = ".gilfoyle/runs/isolation/shell-proof.txt"
+        try:
+            script = (
+                "from pathlib import Path; "
+                f"p=Path({target!r}); p.parent.mkdir(parents=True); p.write_text('probe')"
+            )
+            result = subprocess.run(
+                [shutil.which("python") or "python", "-c", script],
+                cwd=worktree,
+                text=True,
+                capture_output=True,
+                timeout=30,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertTrue((worktree / target).exists())
+            self.assertFalse((self.fixture / target).exists())
+        finally:
+            subprocess.run(
+                ["git", "worktree", "remove", "-f", str(worktree)],
+                cwd=self.fixture,
+                check=False,
+            )
 
     def test_implementer_writes_only_allowed_path(self):
         result = self.run_agent(
