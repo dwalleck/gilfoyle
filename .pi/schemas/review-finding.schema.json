@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gilfoyle.local/schemas/review-finding.schema.json",
+  "title": "Gilfoyle review finding manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "specDigest", "findings"],
+  "properties": {
+    "version": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "specDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "findings": {"type": "array", "maxItems": 12, "items": {"$ref": "#/$defs/finding"}}
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "reviewer", "category", "claim", "proposedFix", "severity", "paths"],
+      "properties": {
+        "key": {"type": "string", "minLength": 1, "maxLength": 256},
+        "reviewer": {"type": "string", "minLength": 1},
+        "category": {"enum": ["bug", "style", "design", "polish"]},
+        "claim": {"type": "string", "minLength": 1},
+        "proposedFix": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["blocker", "high", "medium", "low", "nit"]},
+        "paths": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

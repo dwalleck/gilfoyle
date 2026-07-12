@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gilfoyle.local/schemas/review-decision.schema.json",
+  "title": "Gilfoyle verified review decisions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "specDigest", "decisions"],
+  "properties": {
+    "version": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "specDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "decisions": {"type": "array", "maxItems": 12, "items": {"$ref": "#/$defs/decision"}}
+  },
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "decision", "verified", "evidence", "rationale", "severity", "paths", "deferred"],
+      "properties": {
+        "key": {"type": "string", "minLength": 1, "maxLength": 256},
+        "decision": {"enum": ["accept", "modify", "reject", "duplicate"]},
+        "verified": {"type": "boolean"},
+        "evidence": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "rationale": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["blocker", "high", "medium", "low", "nit"]},
+        "paths": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "deferred": {"type": "boolean"},
+        "trackerId": {"type": "string", "minLength": 1},
+        "duplicateOf": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"if": {"properties": {"deferred": {"const": true}}}, "then": {"required": ["trackerId"]}},
+        {"if": {"properties": {"decision": {"const": "duplicate"}}}, "then": {"required": ["duplicateOf"]}},
+        {"if": {"properties": {"decision": {"enum": ["accept", "modify"]}}}, "then": {"properties": {"verified": {"const": true}}}}
+      ]
+    }
+  }
+}
