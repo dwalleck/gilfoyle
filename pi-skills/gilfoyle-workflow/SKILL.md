@@ -13,7 +13,8 @@ The root Pi session owns this workflow. Never delegate orchestration to a child.
 - Refuse autonomous launch unless Git is on an attached branch and tracked, untracked, and ignored status contains no changes outside these exact local artifact roots: `.gilfoyle/runs/`, `.pi-native-workflow/`, `.pi-subagents/`, and `skills/interrogated-spec-workspace/`. Inspect ignored entries explicitly; `.gitignore` alone is never proof of cleanliness.
 - Validate every result against its `.pi/schemas/` contract, current run ID, signed-spec digest, acceptance evidence, and lifecycle IDs.
 - Launch every leaf with `async: true`, its declared timeout, and fresh artifact-driven context; use `wait()`, never sleep or status polling.
-- Leaf agents never receive `subagent`; `gilfoyle-implementer` is the sole production writer.
+- Launch each non-writer (`prober`, `designer`, `planner`, validators, and `gatekeeper`) as a one-task parallel run with `worktree: true`. Pass signed JSON/evidence in the task or configured reads; persist only structured output. Discard the isolated worktree even if a leaf mutates it.
+- Leaf agents never receive `subagent`; `gilfoyle-implementer` is the sole production writer in the active checkout. Before and after every implementer run, hash the workflow/Kiro control plane and reject any drift outside the accepted slice.
 
 ## State machine
 
