@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gilfoyle.local/schemas/stage-result.schema.json",
+  "title": "Gilfoyle stage result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "specDigest", "stage", "decision", "lifecycle", "acceptance", "evidence", "artifacts", "summary"],
+  "properties": {
+    "version": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "specDigest": {"$ref": "#/$defs/sha256"},
+    "stage": {"enum": ["probe", "design", "plan", "build", "gate", "review"]},
+    "decision": {"enum": ["CONTINUE", "NEEDS_WORK", "HALT_FALSIFIED", "NEEDS_DECISION", "ALL_GREEN"]},
+    "classification": {"enum": ["none", "class-a", "class-b", "ambiguous"]},
+    "implicatedLeg": {"enum": ["impl", "oracle", "design", "substrate"]},
+    "lifecycle": {"$ref": "#/$defs/lifecycle"},
+    "acceptance": {"$ref": "#/$defs/acceptance"},
+    "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}},
+    "artifacts": {"type": "array", "items": {"$ref": "#/$defs/artifact"}},
+    "summary": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "lifecycle": {"type": "object", "additionalProperties": false, "required": ["runId", "childId", "state", "startedAt", "endedAt"], "properties": {"runId": {"type": "string", "minLength": 1}, "childId": {"type": "string", "minLength": 1}, "state": {"enum": ["complete", "failed", "paused"]}, "startedAt": {"type": "string", "format": "date-time"}, "endedAt": {"type": "string", "format": "date-time"}}},
+    "acceptance": {"type": "object", "additionalProperties": false, "required": ["provenance", "passed"], "properties": {"provenance": {"enum": ["attested", "checked", "verified", "reviewed"]}, "passed": {"type": "boolean"}, "failures": {"type": "array", "items": {"type": "string", "minLength": 1}}}},
+    "evidence": {"type": "object", "additionalProperties": false, "required": ["key", "kind", "status", "expected", "actual"], "properties": {"key": {"type": "string", "minLength": 1}, "kind": {"type": "string", "minLength": 1}, "status": {"enum": ["pass", "fail", "blocked"]}, "expected": {}, "actual": {}}},
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}}
+  }
+}
