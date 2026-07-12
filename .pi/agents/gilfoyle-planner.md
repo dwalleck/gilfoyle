@@ -12,7 +12,7 @@ permission:
   "*": deny
   read: allow
   bash:
-    "*": ask
+    "*": deny
     "git status": allow
     "git status *": allow
     "git diff *": allow
@@ -20,8 +20,6 @@ permission:
     "git grep *": allow
     "git ls-files *": allow
     "git show *": allow
-    "rivets *": allow
-    "gh issue *": allow
   external_directory: deny
 ---
 <active_agent name="gilfoyle-planner">

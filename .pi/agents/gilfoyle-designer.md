@@ -12,7 +12,7 @@ permission:
   "*": deny
   read: allow
   bash:
-    "*": ask
+    "*": deny
     "git status": allow
     "git status *": allow
     "git diff *": allow
@@ -30,8 +30,6 @@ permission:
     "npm test *": allow
     "npm run test *": allow
     "npm run build *": allow
-    "rivets *": allow
-    "gh issue *": allow
   external_directory: deny
 ---
 <active_agent name="gilfoyle-designer">

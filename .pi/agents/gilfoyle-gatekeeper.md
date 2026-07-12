@@ -12,7 +12,7 @@ permission:
   "*": deny
   read: allow
   bash:
-    "*": ask
+    "*": deny
     "git status": allow
     "git status *": allow
     "git diff *": allow

@@ -41,14 +41,17 @@ class PermissionContractTests(unittest.TestCase):
             self.assertIn(f'<active_agent name="{name}">', text)
             self.assertNotIn("subagent", tools)
             self.assertIn("defaultContext: fresh", text)
+            self.assertIn('bash:\n    "*": deny', text)
 
     def test_only_implementer_has_mutation_tools(self):
         for path in AGENTS.glob("*.md"):
-            _, name, tools = agent_fields(path)
+            text, name, tools = agent_fields(path)
             if name == "gilfoyle-implementer":
                 self.assertTrue({"write", "edit"} <= tools)
             else:
                 self.assertTrue({"write", "edit"}.isdisjoint(tools))
+                self.assertNotIn('"rivets *": allow', text)
+                self.assertNotIn('"gh issue *": allow', text)
 
     def test_implementer_denies_control_plane_paths(self):
         text, _, _ = agent_fields(AGENTS / "gilfoyle-implementer.md")
@@ -57,6 +60,12 @@ class PermissionContractTests(unittest.TestCase):
         self.assertNotIn('"git push *": allow', text)
         self.assertNotIn('"git reset *": allow', text)
         self.assertNotIn('"git clean *": allow', text)
+        self.assertIn("recompute them and halt on any drift", text)
+
+    def test_root_isolates_non_writers(self):
+        root_skill = (ROOT / "pi-skills/gilfoyle-workflow/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("one-task parallel run with `worktree: true`", root_skill)
+        self.assertIn("hash the workflow/Kiro control plane", root_skill)
 
 
 if __name__ == "__main__":
