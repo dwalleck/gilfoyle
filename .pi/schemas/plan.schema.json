@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gilfoyle.local/schemas/plan.schema.json",
+  "title": "Gilfoyle budgeted slice plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "specDigest", "designDigest", "stage", "decision", "slices", "selfReview"],
+  "properties": {
+    "version": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "specDigest": {"$ref": "#/$defs/sha256"},
+    "designDigest": {"$ref": "#/$defs/sha256"},
+    "stage": {"const": "plan"},
+    "decision": {"enum": ["CONTINUE", "HALT_FALSIFIED", "NEEDS_DECISION"]},
+    "slices": {"type": "array", "minItems": 1, "maxItems": 12, "items": {"$ref": "#/$defs/slice"}},
+    "selfReview": {"$ref": "#/$defs/selfReview"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "commandCheck": {"type": "object", "additionalProperties": false, "required": ["command", "expected"], "properties": {"command": {"type": "string", "minLength": 1}, "expected": {}}},
+    "slice": {"type": "object", "additionalProperties": false, "required": ["key", "claimKey", "purpose", "oracle", "stressFixture", "expectedOutput", "loopBudget", "files", "verification"], "properties": {"key": {"type": "string", "minLength": 1}, "claimKey": {"type": "string", "minLength": 1}, "purpose": {"type": "string", "minLength": 1}, "oracle": {"type": "string", "minLength": 1}, "stressFixture": {"type": "string", "minLength": 1}, "expectedOutput": {}, "loopBudget": {"type": "object", "additionalProperties": false, "required": ["complexity", "productionScale", "operationCeiling"], "properties": {"complexity": {"type": "string", "minLength": 1}, "productionScale": {"type": "string", "minLength": 1}, "operationCeiling": {"type": "integer", "minimum": 0, "maximum": 1000000}, "syscallCeiling": {"type": "integer", "minimum": 0, "maximum": 1000}}}, "wallBudgetSeconds": {"type": "integer", "minimum": 1}, "files": {"type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}, "verification": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/commandCheck"}}}},
+    "selfReview": {"type": "object", "additionalProperties": false, "required": ["loopGaps", "fixtureGaps", "preconditionGaps", "streamGaps", "trackerGaps"], "properties": {"loopGaps": {"type": "array", "maxItems": 0}, "fixtureGaps": {"type": "array", "maxItems": 0}, "preconditionGaps": {"type": "array", "maxItems": 0}, "streamGaps": {"type": "array", "maxItems": 0}, "trackerGaps": {"type": "array", "maxItems": 0}}}
+  }
+}

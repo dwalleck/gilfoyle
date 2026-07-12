@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gilfoyle.local/schemas/design.schema.json",
+  "title": "Gilfoyle falsifiable design",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "specDigest", "probeDigest", "stage", "decision", "inputShapes", "removedInvariants", "claims", "negativeSpace", "cheapestFalsifierKey", "trackerIds"],
+  "properties": {
+    "version": {"const": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "specDigest": {"$ref": "#/$defs/sha256"},
+    "probeDigest": {"$ref": "#/$defs/sha256"},
+    "stage": {"const": "design"},
+    "decision": {"enum": ["CONTINUE", "HALT_FALSIFIED", "NEEDS_DECISION"]},
+    "inputShapes": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/shape"}},
+    "removedInvariants": {"type": "array", "items": {"$ref": "#/$defs/invariant"}},
+    "claims": {"type": "array", "minItems": 3, "maxItems": 15, "items": {"$ref": "#/$defs/claim"}},
+    "negativeSpace": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "cheapestFalsifierKey": {"type": "string", "minLength": 1},
+    "trackerIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "implicatedLeg": {"enum": ["impl", "oracle", "design", "substrate"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "shape": {"type": "object", "additionalProperties": false, "required": ["key", "description", "coverage"], "properties": {"key": {"type": "string", "minLength": 1}, "description": {"type": "string", "minLength": 1}, "coverage": {"type": "string", "minLength": 1}, "outOfScopeReason": {"type": "string", "minLength": 1}}},
+    "invariant": {"type": "object", "additionalProperties": false, "required": ["removedConstraint", "property", "coverage"], "properties": {"removedConstraint": {"type": "string", "minLength": 1}, "property": {"type": "string", "minLength": 1}, "coverage": {"type": "string", "minLength": 1}}},
+    "claim": {"type": "object", "additionalProperties": false, "required": ["key", "statement", "falsifier", "oracle", "buggyImplementation", "distinctOutput", "costMinutes", "status", "regressionFence"], "properties": {"key": {"type": "string", "minLength": 1}, "statement": {"type": "string", "minLength": 1}, "falsifier": {"type": "string", "minLength": 1}, "oracle": {"type": "string", "minLength": 1}, "buggyImplementation": {"type": "string", "minLength": 1}, "distinctOutput": {"type": "string", "minLength": 1}, "costMinutes": {"type": "integer", "minimum": 1}, "status": {"enum": ["pending", "passed", "failed", "manual-approved"]}, "regressionFence": {"type": "string", "minLength": 1}}}
+  }
+}
