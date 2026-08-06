@@ -162,12 +162,15 @@ After writing the design but before showing it to the user:
 
 2. **Falsifier independence.** For each falsifier, is its oracle independent of the system under test? If a falsifier's oracle is "another part of this feature," replace it.
 
-3. **Falsifier non-vacuity.** For each falsifier, name a specific buggy implementation that would make it fail. If you can't, the fence is decoration — it passes today and would pass in any future where the bug returns. Two recurring shapes to watch for:
+3. **Falsifier non-vacuity.** For each falsifier, name a specific buggy implementation that would make it fail. If you can't, the fence is decoration — it passes today and would pass in any future where the bug returns. Three recurring shapes to watch for:
 
    - **Predicates the schema makes mutually exclusive.** Combining `column LIKE 'X%'` AND `other_column IS NOT NULL` looks like a tighter filter, but if the schema's UPDATE atomically nulls one column when setting the other (e.g., `UPDATE refs SET symbol_id = ?, reference_name = NULL`), the two predicates can never both hold. The filter is vacuous regardless of bug.
    - **Disjunctive assertions where one disjunct is also asserted standalone.** `assert!(A == 0 || B >= 1); assert!(B >= 1);` — the first cannot catch any bug the second misses. Looks like defense-in-depth, isn't.
+   - **Assertions over an instrument that cannot observe the cost.** When a change *relocates* work instead of removing it, a counter scoped to the old location reports the win for free, and a budget over that counter can never fail however expensive the new location becomes. Move a graph walk out of a search into a separate pass, then budget the search's own visit counter, and you are measuring the refactor rather than the cost: the number falls to zero while the work carries on next door. Ask per counter: *if this cost came back tomorrow, which number would move?* If the honest answer is "none of the ones I am asserting on," instrument the new location before writing the budget.
 
-   The TDD-inversion test surfaces both: if no code mutation makes the new assertion fail without also failing a *different* assertion in the same fence, it's vacuous. Cut or rewrite. Distinct from #2 (independence is about whether the oracle lives outside the SUT; non-vacuity is about whether the oracle can fire at all) and from #4 below (distinctness is about which claim failed; non-vacuity is about whether any claim *can* fail).
+   The TDD-inversion test surfaces all three: if no code mutation makes the new assertion fail without also failing a *different* assertion in the same fence, it's vacuous. Cut or rewrite. Distinct from #2 (independence is about whether the oracle lives outside the SUT; non-vacuity is about whether the oracle can fire at all) and from #4 below (distinctness is about which claim failed; non-vacuity is about whether any claim *can* fail).
+
+   **What you write here is a prediction, not a verification.** You are naming a bug before the fixture that has to catch it exists. Non-vacuity is a property of the bug *together with* the fixture chosen later, so a correct prediction paired with a blind fixture still ships a fence that passes forever — the fixture is often a degenerate case where the buggy and correct code agree. `checkpointed-build` §e3 discharges this by actually applying each named mutation once the fence is written. Name the bug precisely enough here that the mutation is mechanical there.
 
 4. **Per-claim verification distinctness.** Each claim must have a *distinct* falsifier output — meaning if claim N fails, you can tell *which claim* failed by reading the oracle's output, without guessing. If two claims share a single oracle that produces one yes/no answer covering both, you have lost the ability to localize failures. Either split the oracle into per-claim outputs (e.g. distinct sections of a probe script, or distinct asserts in a test suite) or merge the claims into one.
 
@@ -207,6 +210,8 @@ The cheapest claim's status must be `passed` before the design moves to planning
 A claim with `Regression fence: manual` is allowed but requires explicit user approval before merging. The default for measurement-based claims is "needs CI test before merge."
 
 The fence's fixture should embed the bug class being fixed. For a "hardcoded-path-is-wrong" fix, the fixture's directory layout should defeat the hardcode (e.g., workspace root with no `src/`). Pre-fix code fails the fence; post-fix code passes. This makes the test a true regression sentinel — it won't trivially pass on whatever workspace it's pointed at.
+
+**For measurement fences, prefer a bound the observed value lands near.** A budget the measurement clears by three orders of magnitude, and especially one whose observed value is `0`, is weak evidence and often a symptom: the work usually went somewhere the counter cannot see rather than stopping. A fence reading "spent 384 against a budget of 384" fails the moment the cost creeps back; one reading "spent 0 against a budget of 3,600" would absorb a twelvefold regression in silence. If the honest number really is zero, assert the zero exactly (`assert_eq!(x, 0)`) rather than hiding it inside a range it cannot fail.
 
 ## Hard gate
 

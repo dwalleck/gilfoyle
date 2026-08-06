@@ -16,8 +16,9 @@ For each slice:
   3. Run the stress fixture.
   4. Run the prove-it-prototype oracle against the binary.
   5. Check the budget.
-  6. If anything in 2-5 fails → STOP. Surface to user. Do not proceed.
-  7. Else → commit. Next slice.
+  6. Break the code each new fence guards; confirm the fence goes red.
+  7. If anything in 2-6 fails → STOP. Surface to user. Do not proceed.
+  8. Else → commit. Next slice.
 ```
 
 Stopping is the most important step. The standard convention is to push through drift and "fix it later." We do not. Drift caught at slice N is cheap. Drift caught at slice N+8 is the entire feature.
@@ -135,7 +136,29 @@ If the slice's claim has `Regression fence: manual` in the design, this step is 
 
 If the slice has no associated regression fence, this step is a no-op — but flag it: a claim shipping with no regression fence is a future-regression risk the design accepted explicitly. Note the absence in the slice's commit message so the next reader sees the gap.
 
-#### f. If anything in (b)–(e2) fails: STOP.
+#### e3. Break it — confirm the fence can actually fail
+
+A fence that has only ever been observed passing is not yet evidence of anything. For every *new* fence this slice adds, apply the buggy implementation the design named for it in its non-vacuity column, and confirm the fence goes red:
+
+```
+cp src/thing.rs /tmp/thing.bak     # or: git stash / worktree copy
+<apply the named mutation>
+<run the fence>                    # must FAIL, and name the right thing in its message
+cp /tmp/thing.bak src/thing.rs     # restore, re-run, confirm green again
+```
+
+**This is not the same check `falsifiable-design` §7 already made, and running it there is not sufficient.** At design time you named a *bug*; non-vacuity is a property of that bug **plus the concrete fixture you wrote afterwards**, which did not exist yet. A correct bug prediction plus a blind fixture yields a fence that passes forever. Only the executed mutation tests the pair.
+
+If the fence stays green under its own named mutation:
+
+- **The fixture shape is blind to the bug — change the fixture, not the assertion.** Do not weaken the claim to match what the test can see, and do not delete the mutation because "the code is obviously right." Ask what the fixture would have to look like for this bug to change its output, and build that.
+- Common blindness: the fixture is a degenerate case in which the buggy and correct code agree. A cycle-confinement prune cannot be observed on a graph where the confined region *is* everything reachable; a tie-break cannot be observed when the primary key is unique; a cache invalidation cannot be observed when nothing is ever stale.
+
+Record the mutation and its result in the slice's commit message. A reader six months out needs to know the fence was seen red, not just green.
+
+If you cannot construct any mutation that turns the fence red without also turning a *different* assertion red, the fence is redundant with that other assertion. Cut it.
+
+#### f. If anything in (b)–(e3) fails: STOP.
 
 Do not commit. Do not advance to the next slice. Surface to the user:
 
@@ -147,6 +170,7 @@ Slice N halted.
 - Oracle drift:     [exact items where binary and oracle disagree]
 - Budget:           [actual vs planned, with measurement]
 - Regression fence: [pass | fail with diff | none associated with this slice]
+- Fence mutation:   [went red as expected | STAYED GREEN — fixture is blind to the bug]
 
 The implementation, the oracle, or the design is wrong. Which is it?
 ```
@@ -171,7 +195,7 @@ The slice you just landed may have made earlier slice comments out of date. Scan
 
 Run `grep` for the slice number, for keywords like "TODO", "later", "future", "deferred", "tracked", and for any comment phrase that anticipated work that's now done. Fix what you find before committing.
 
-#### g. If everything in (b)–(e2) passes: commit
+#### g. If everything in (b)–(e3) passes: commit
 
 One commit per slice. Commit message references the design claim this slice implements.
 
