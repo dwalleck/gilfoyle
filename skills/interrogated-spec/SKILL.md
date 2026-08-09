@@ -130,11 +130,15 @@ Numbered list, append-only during interrogation. Each entry: the question asked,
 
 ## Sign-off
 
-The requester typed, verbatim: "<their words>"
+Agent's summary of the decisions:
+
+> <concise summary, in your own words, of what was agreed>
+
+The requester agreed: "<their words>"
 
 Date: <YYYY-MM-DD>
 
-The string "lgtm," "ok," "sounds good," "ship it," and "yeah whatever" do not satisfy this gate. The requester must state the feature back, in their own words, and the words must match this artifact.
+The summary is your burden. If you cannot write it in a few plain sentences, the spec is not pinned. The requester's job is to agree or object — a simple, explicit agreement is the point, not a reproduction of the spec. Any objection means **the artifact is wrong**; return to step 4.
 ```
 
 ## Process
@@ -185,9 +189,9 @@ This is iterative. Not a survey.
 
 10. **WRITE the artifact** per the structure above. Every section populated.
 
-11. **PRESENT to the requester.** Have them read it. Ask: "State back to me, in your own words, what this feature does." Capture verbatim into the sign-off section. If their statement does not match the artifact, **the artifact is wrong** — they don't agree with what's written. Return to step 5.
+11. **PRESENT to the requester.** Have them read it. Then present your own summary of the decisions made — a few plain sentences, not a dump of the artifact. Ask: "Do you agree with these decisions?" Capture their answer verbatim into the sign-off section. If they object to anything, **the artifact is wrong** — they don't agree with what's written. Return to step 5.
 
-12. **SIGN-OFF GATE.** The requester typed the spec back. The strings match. Date the artifact. Now and only now, hand off to `prove-it-prototype`.
+12. **SIGN-OFF GATE.** The requester affirmed the summary without objection. Date the artifact. Now and only now, hand off to `prove-it-prototype`.
 
 ## Refusal triggers — stop the interrogation and report
 
@@ -242,7 +246,7 @@ When the artifact is complete and signed:
 
 1. Confirm the file path: `.<feature-slug>/spec.md`.
 2. Confirm the decisions-log table is non-empty.
-3. Confirm the sign-off section has the requester's verbatim words.
+3. Confirm the sign-off section has your summary of the decisions and the requester's affirmation.
 4. Invoke `prove-it-prototype` with that path. The probe and oracle should be answering questions FROM this spec. If they aren't, this spec was not specific enough — return to step 4.
 
 ## Anti-patterns
@@ -250,7 +254,7 @@ When the artifact is complete and signed:
 - **The survey dump.** Sending the requester 30 questions in one message. They will answer each one consistent with the previous answer, not with reality. Iterative grilling catches contradictions; surveys hide them.
 - **Accepting "I think..." as an answer.** "I think it should be 200ms" is a guess. Either commit to 200ms in the artifact, or admit you don't know yet and find out.
 - **Letting the requester narrate the implementation.** They want to tell you about the algorithm. You don't care yet. You care about the observable behavior. The algorithm is for `falsifiable-design`.
-- **Skipping the verbatim sign-off.** "Yeah looks good" is not sign-off. The requester must restate the feature in their own words. If they can't, they don't understand what's in the artifact.
+- **Skipping the sign-off.** Presenting the artifact without the summary and the requester's affirmation. The gate is only that the summary was presented and the requester affirmed it without objection — a simple "yeah, looks good" after the summary is a valid sign-off.
 - **Treating the spec as immutable post-sign-off.** The spec can change. It changes by returning to step 4, re-interrogating, and re-signing. Not by a Slack message saying "oh also."
 
 ## Links
