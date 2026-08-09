@@ -13,6 +13,7 @@ This independent Pi scope keeps the methodology below but replaces its Markdown 
 - Return the design through `structured_output` using `.pi/schemas/design.schema.json`.
 - Every claim has a stable normalized key, covered input shapes, removed-invariant disposition, independent falsifier, named buggy implementation, distinct expected/actual output, cost, status, and regression fence.
 - Normalize keys with Unicode case-folding; duplicate normalized keys reject the entire result.
+- Every new capability has a `placements[]` entry naming its owning module, whether it opens a new seam, what the implementer is forbidden to do, and a `coverage` key pointing at the claim whose falsifier is mechanical (visibility, dependency direction, or a test in the owning crate). Extend-existing work with no new capability returns an empty array.
 - Record negative space with at least three settled boundaries and verified tracker IDs for actual deferrals.
 - `CONTINUE` requires the cheapest falsifier to have run and passed; a fired falsifier returns `HALT_FALSIFIED`.
 - Stale run/spec digests, missing probe agreement, or ambiguous implicated legs return `NEEDS_DECISION`.
@@ -104,6 +105,26 @@ The cost is 10 minutes. The cost of skipping it: every fence you write tests the
 
 Red flag: if your change relaxes concurrency or ordering and your claim list only describes new capability, you have not swept. The question is never "does the new thing work?" — it's "what stopped being mutually exclusive, and who assumed it wasn't?"
 
+### 2c. Decide the shape (placement pass)
+
+Steps 2 and 2b anchor claims to behavior. This step anchors the design to *structure* — which module owns each new capability, and what the implementer may not do. Skipping it does not produce a wrong design; it produces an unplaced one, and placement then gets decided implicitly by whichever agent implements the first slice.
+
+Run the `codebase-design` skill for the deep-module vocabulary (module, interface, depth, seam, adapter). If it isn't installed, answer the questions below in plain terms anyway — the questions are the gate, not the vocabulary.
+
+Ground the answers in the repo's standing module map — whatever architecture doc the project's domain-doc layout puts on the read path (e.g. `docs/agents/domain.md` listing `docs/module-structure.md`). Don't re-derive the layout from scratch, and if the map contradicts the code, flag the drift; don't silently follow either side.
+
+For each new capability the design introduces, answer in writing:
+
+- **Owner.** Which existing crate/module owns it? Name it. If the capability could plausibly live in more than one place, say in one sentence why the named owner wins.
+- **New seam?** If no existing module can own it, the feature introduces a new interface. Run the `design-an-interface` skill to generate competing shapes before committing to one. Skip this for extend-existing work — a capability that slots behind an existing interface needs no new design.
+- **Forbidden.** What may the implementer NOT do? Dependency directions that must not appear, layers that must not re-implement or re-validate this, call sites that must not reach the internals directly.
+
+Each placement decision that could silently regress becomes a claim in step 3 with a *mechanical* falsifier: visibility (`pub(crate)` makes the wrong call site a compile error), a dependency-direction check, or a test written in the owning crate — a test can only exercise code placed where the test can see it. "The reviewer will notice" is not a falsifier. In Pi output, each decision is a `placements[]` entry whose `coverage` names the claim key carrying that falsifier, the same way `removedInvariants[].coverage` does.
+
+The cost is 10 minutes plus one skill load. The cost of skipping it: the path of least resistance wins — logic lands wherever is easiest to reach from the entry point that needed it — and the boundary violation ships invisibly, because every behavioral falsifier passes. The feature works; it just lives in the wrong place, and the next feature copies it.
+
+Red flag: the design introduces a noun that appears in no existing module's vocabulary, and step 2c names no owner for it. You have not placed it — the implementing agent will.
+
 ### 3. Enumerate claims
 
 Write the design as a numbered list of claims. One sentence each. If a claim takes more than one sentence, split it. For each input shape from step 2, ensure at least one claim covers it.
@@ -173,9 +194,11 @@ After writing the design but before showing it to the user:
 
 8. **Removed-invariant coverage.** If step 2b classified the change as subtractive, does every broken invariant it surfaced have a claim and a falsifier? A subtractive change whose claim list describes only new capability has skipped the sweep — go back to 2b. (Distinct from #6 Negative space: negative space is what the feature *won't* do on purpose; a removed invariant is what silently *stopped being true*.)
 
+9. **Placement coverage.** Does every new capability from step 2c have a named owner? Does every structural claim have a mechanical falsifier — visibility, dependency-direction check, or a test in the owning crate? A design whose claims are all behavioral has decided placement by omission.
+
 ### 8. Write the design doc
 
-Standard sections — purpose, architecture, components — with one mandatory new section:
+Standard sections — purpose, architecture, components — with one mandatory new section. The architecture section carries step 2c's placement decisions (owner / seam / forbidden), not just a diagram:
 
 #### Falsification
 
@@ -212,6 +235,8 @@ The next skill — `budgeted-plan` — refuses to run until:
 - [ ] **Every claim has a distinct verifiable output** — if claim N fails, the oracle's output tells you it was claim N specifically (not "something in the feature broke")
 - [ ] **Every measurement-based claim has a `Regression fence` entry** pointing at a deterministic CI test, OR explicit `manual` with documented user approval
 - [ ] **Every deferral / out-of-scope / tracked-elsewhere reference in the design names a verified tracker ID** (existence checked, not assumed); deferrals without a citation have had their issue filed
+- [ ] **Every new capability names an owning module** (step 2c) — and any new seam went through `design-an-interface` before being committed to
+- [ ] **Every structural claim has a mechanical falsifier** — visibility, dependency-direction check, or a test in the owning crate
 - [ ] The cheapest falsifier has been run and passed
 - [ ] The "Negative space" list has at least three entries
 
@@ -235,5 +260,6 @@ This is not brainstorming. Brainstorming optimizes for "what if we did X?" — a
 - The cheapest falsifier run, with its passing result recorded in the table.
 - The "Negative space" section listing what the feature deliberately won't do.
 - The "Input shapes" enumeration (can be a list immediately above the claim list, or its own subsection).
+- The placement decisions from step 2c (owner / seam / forbidden), in the design's architecture section.
 
-If any of those four are missing, the skill didn't run. Run it.
+If any of those five are missing, the skill didn't run. Run it.
