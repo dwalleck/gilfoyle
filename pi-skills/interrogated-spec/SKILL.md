@@ -15,8 +15,8 @@ This independent Pi scope keeps the methodology below but replaces its Markdown 
 - `spec.json` must validate against `.pi/schemas/specification.schema.json` before sign-off.
 - Record observable behaviors, measurable criteria, edge decisions, negative space, constraints, and the append-only decisions log as structured fields.
 - Reject empty or traversal slugs and any resolved path outside `.gilfoyle/runs/`.
-- Sign-off requires confirmation text, UTC timestamp, and SHA-256 of the canonical unsigned specification payload.
-- A digest mismatch, missing confirmation, or failed cold spot-check leaves the run in `NEEDS_DECISION` and forbids autonomous stages.
+- Sign-off requires the agent's own summary of the decisions, the requester's affirmation of that summary as confirmation text, a UTC timestamp, and SHA-256 of the canonical unsigned specification payload.
+- A digest mismatch, a missing summary or affirmation, a recorded objection, or a failed cold spot-check leaves the run in `NEEDS_DECISION` and forbids autonomous stages.
 - When machine output is requested, call `structured_output`; prose is not the workflow contract.
 - Markdown examples later in this file are explanatory only; this JSON contract controls Pi output.
 
@@ -145,11 +145,15 @@ Numbered list, append-only during interrogation. Each entry: the question asked,
 
 ## Sign-off
 
-The requester typed, verbatim: "<their words>"
+Agent's summary of the decisions:
+
+> <concise summary, in your own words, of what was agreed>
+
+The requester agreed: "<their words>"
 
 Date: <YYYY-MM-DD>
 
-The string "lgtm," "ok," "sounds good," "ship it," and "yeah whatever" do not satisfy this gate. The requester must state the feature back, in their own words, and the words must match this artifact.
+The summary is your burden. If you cannot write it in a few plain sentences, the spec is not pinned. The requester's job is to agree or object — a simple, explicit agreement is the point, not a reproduction of the spec. Any objection means **the artifact is wrong**; return to step 4. The cold spot-check remains the independent read on comprehension; it is not replaced by the affirmation.
 ```
 
 ## Process
@@ -200,9 +204,9 @@ This is iterative. Not a survey.
 
 10. **WRITE the JSON artifact.** Populate every schema field, canonicalize the unsigned payload, validate it, and compute its SHA-256 digest.
 
-11. **PRESENT to the requester.** Render the validated JSON as a human-readable view without creating a second authoritative artifact. Run the cold spot-check and ask: "State back to me, in your own words, what this feature does." Capture confirmation text and verbatim answers in `spec.json`. A mismatch returns to step 5.
+11. **PRESENT to the requester.** Render the validated JSON as a human-readable view without creating a second authoritative artifact. Run the cold spot-check, then present your own summary of the decisions — a few plain sentences, not a dump of the artifact — and ask: "Do you agree with these decisions?" Capture the summary and the requester's answer verbatim in `spec.json`. An objection, or a spot-check answer that contradicts a recorded decision, returns to step 5.
 
-12. **SIGN-OFF GATE.** Revalidate the completed object, record the UTC timestamp and digest, and set the structured decision to `CONTINUE`. A missing/mismatched answer or digest sets `NEEDS_DECISION`; no autonomous stage launches.
+12. **SIGN-OFF GATE.** Revalidate the completed object, record the summary, the requester's affirmation, the UTC timestamp and digest, and set the structured decision to `CONTINUE`. A missing summary or affirmation, a recorded objection, a failed spot-check, or a digest mismatch sets `NEEDS_DECISION`; no autonomous stage launches.
 
 ## Refusal triggers — stop the interrogation and report
 
@@ -257,7 +261,7 @@ When the artifact is complete and signed:
 
 1. Confirm `.gilfoyle/runs/<feature-slug>/spec.json` resolves inside the run root.
 2. Validate the decisions array is non-empty and every required behavior/edge/constraint field is populated.
-3. Recompute the canonical unsigned-payload SHA-256 and match the stored digest, confirmation text, timestamp, and cold spot-check answers.
+3. Recompute the canonical unsigned-payload SHA-256 and match the stored digest, agent summary, requester affirmation, timestamp, and cold spot-check answers.
 4. Return the schema-valid structured result to the root. The root invokes `prove-it-prototype` with the JSON path only on `CONTINUE`; otherwise it remains `NEEDS_DECISION`.
 
 ## Anti-patterns
@@ -265,7 +269,7 @@ When the artifact is complete and signed:
 - **The survey dump.** Sending the requester 30 questions in one message. They will answer each one consistent with the previous answer, not with reality. Iterative grilling catches contradictions; surveys hide them.
 - **Accepting "I think..." as an answer.** "I think it should be 200ms" is a guess. Either commit to 200ms in the artifact, or admit you don't know yet and find out.
 - **Letting the requester narrate the implementation.** They want to tell you about the algorithm. You don't care yet. You care about the observable behavior. The algorithm is for `falsifiable-design`.
-- **Skipping the verbatim sign-off.** "Yeah looks good" is not sign-off. The requester must restate the feature in their own words. If they can't, they don't understand what's in the artifact.
+- **Skipping the sign-off.** Presenting the artifact without the summary and the requester's affirmation. The gate is only that the summary was presented and the requester affirmed it without objection — a simple "yeah, looks good" after the summary is a valid sign-off.
 - **Treating the spec as immutable post-sign-off.** The spec can change. It changes by returning to step 4, re-interrogating, and re-signing. Not by a Slack message saying "oh also."
 
 ## Links

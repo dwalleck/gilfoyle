@@ -20,8 +20,9 @@
     "signoff": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["confirmationText", "timestampUtc", "unsignedPayloadSha256", "spotChecks"],
+      "required": ["agentSummary", "confirmationText", "timestampUtc", "unsignedPayloadSha256", "spotChecks"],
       "properties": {
+        "agentSummary": {"type": "string", "minLength": 1},
         "confirmationText": {"type": "string", "minLength": 1},
         "timestampUtc": {"type": "string", "format": "date-time"},
         "unsignedPayloadSha256": {"$ref": "#/$defs/sha256"},
