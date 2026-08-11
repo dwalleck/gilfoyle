@@ -110,6 +110,14 @@ Explicit list. Phrased as `this change does NOT include:` followed by named thin
 
 The point of this section is to be referenceable when scope creep is proposed mid-build.
 
+## Delivery increments
+
+In ship order, the independently valuable increments this feature lands as:
+
+1. **<increment name>**: <behaviors covered> — valuable and verifiable without the increments after it.
+
+If the feature is genuinely atomic — cannot ship in increments — say so and why. "It's easier as one PR" is not a why.
+
 ## Constraints
 
 | Dimension | Limit | How measured |
@@ -187,6 +195,9 @@ This is iterative. Not a survey.
 
 9. **NAME THE BOUNDARY.** Force the requester to state what is out of scope. "What about read receipts?" "What about mobile push?" "What about the existing endpoint's response shape?" Every answer either adds to scope (with new behaviors, edges, criteria) or pins the boundary.
 
+    Then partition what is IN scope: "if this ships in independently valuable increments, what is the first?" A spec whose behaviors can only land as one indivisible drop is either genuinely atomic (rare — the artifact must say why) or under-decomposed (common). Record the increments in the artifact. Downstream, `budgeted-plan` turns them into its PR partition, and any increment big enough to stand alone gets its own tracker issue — the pipeline's mechanical assumption is one issue = one branch = one PR, so issue granularity set here is PR size decided while it still costs nothing.
+
+
 10. **WRITE the artifact** per the structure above. Every section populated.
 
 11. **PRESENT to the requester.** Have them read it. Then present your own summary of the decisions made — a few plain sentences, not a dump of the artifact. Ask: "Do you agree with these decisions?" Capture their answer verbatim into the sign-off section. If they object to anything, **the artifact is wrong** — they don't agree with what's written. Return to step 5.
@@ -213,6 +224,7 @@ If any of these happen, stop and surface to the user, do not paper over:
 - Behaviors phrased as outcomes, not given/when/then triples. ("The dashboard reflects the current state.")
 - Disagreement between two cells of the artifact you can detect by reading top to bottom.
 - Edge cases listed without decisions.
+- A behavior list that can only ship as one indivisible drop, with no stated reason it is atomic. Un-partitioned scope becomes an un-reviewable PR.
 
 If any red flag is present, **return to step 4.** Do not hand off.
 

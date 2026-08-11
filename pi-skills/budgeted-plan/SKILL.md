@@ -49,7 +49,19 @@ Take the claim list from the design. Each claim becomes one slice. If a claim is
 
 A slice should be implementable in 30 minutes or less. If it takes longer, you have not decomposed enough.
 
-### 2. Per-slice fields (mandatory)
+### 2. Sum the integration budget — partition into PRs
+
+Per-slice budgets bound each hypothesis. Nothing above bounds what you will eventually ask a reviewer to hold in their head at once. That number — the summed diff — is a budget like the others, and the standard convention is to discover it at PR-open time, when it is too late to be a decision. We compute it now.
+
+- Estimate each slice's diff footprint in changed lines (implementation + tests + fixtures). The slice's file list and code sketch already imply it; write it down.
+- Sum across slices, then add ~20% for review-fix churn. Plans drift upward, never downward.
+- **If the sum exceeds ~4,000 changed lines, the plan MUST contain a PR partition:** slices grouped into independently mergeable increments in dependency order, each with its own mergeable definition (tests green, fences in, no dead-code warnings — stage not-yet-consumed modules test-only until their first production consumer lands).
+- Partition on **verification seams**, not line counts: a group is a valid PR when its own oracles and fixtures verify it without the later groups existing. Types plus committed-capture fixtures verify alone; converters verify against fixtures; wiring verifies against the app. Those are seams. "The first half of the diff" is not a seam.
+- If the spec recorded delivery increments (`interrogated-spec`), the partition follows them. If they disagree, one of them is wrong — reconcile before saving the plan.
+
+Why ~4,000: review quality degrades superlinearly with diff size, and automated review harnesses have hard context ceilings (8,000 lines is a real one). Half the ceiling is the budget. The evidence is a 15.5k-line single-PR branch that had to be retroactively stack-reviewed in three segments — which landed exactly on the plan's phase seams. The partition existed at plan time and was never cashed in. The bill: stale findings, reviewers blind to cross-segment context, and one flaky-test anti-pattern replicated 13× because no external feedback fired until the end.
+
+### 3. Per-slice fields (mandatory)
 
 Each slice has these fields *before* any code:
 
@@ -78,7 +90,7 @@ Each slice has these fields *before* any code:
 
 If you cannot fill in all the mandatory fields, the slice is not ready. Do not fake it. Go think.
 
-### 3. Loop budget rules
+### 4. Loop budget rules
 
 For every new loop the slice introduces:
 
@@ -88,7 +100,7 @@ For every new loop the slice introduces:
 
 A loop without a complexity statement is a budget violation. Do not write one.
 
-### 4. Stress fixture rules
+### 5. Stress fixture rules
 
 For every slice that implements logic (not pure types, not pure schema):
 
@@ -104,7 +116,7 @@ The stress fixture's expected output is written down *before* the implementation
 
 If you cannot think of a plausible bug for a slice, the slice is either too small to be worth its own test (combine with the next one) or you haven't thought hard enough (think harder).
 
-### 5. Doc-comment-as-contract rule
+### 6. Doc-comment-as-contract rule
 
 For every doc comment in the slice that says "callers must X" or "Y is a precondition" or "Z must be non-empty," classify the precondition's enforcement strength FIRST, then enforce accordingly:
 
@@ -116,7 +128,7 @@ The test: ask "what does the function silently produce in release builds if this
 
 A documented precondition without ANY enforcement is a documentation lie. We do not ship those.
 
-### 6. Output stream rule
+### 7. Output stream rule
 
 For every thing the slice writes to:
 
@@ -126,17 +138,18 @@ For every thing the slice writes to:
 
 If the rule is violated, justify it in writing in the slice. Don't ship an unexamined `println!` to a file descriptor.
 
-### 7. Self-review
+### 8. Self-review
 
-Before saving the plan, run these five lists:
+Before saving the plan, run these six lists:
 
 1. **Every loop in the plan.** For each: complexity stated? Within budget at production scale?
 2. **Every fixture.** For each: what bug class is it designed to fail under? Is it more than a happy-path exercise?
 3. **Every doc-comment precondition.** For each: classified as load-bearing-correctness or sanity-hint? Where is the matching enforcement (runtime check for the former, `debug_assert!` for the latter)?
 4. **Every write target.** For each: classified data or diagnostic?
 5. **Every tracker reference.** Per the tracker discipline introduced in `falsifiable-design`: every "deferred to rivets-XXX" / "out of scope per rivets-YYY" / "tracked elsewhere" / "follow-up" in the plan must resolve to an existing tracker issue whose content covers the deferred work. Deferrals without a citation get an issue filed *now* before the plan is finalized — don't wait for review feedback to surface the gap.
+6. **The integration budget.** Summed slice diffs computed (plus churn margin)? If over ~4,000 changed lines, does the PR partition exist — and does every group verify without the groups after it?
 
-If any of the five lists has gaps, the plan is incomplete. Don't save it.
+If any of the six lists has gaps, the plan is incomplete. Don't save it.
 
 ## Hard gate
 
@@ -145,6 +158,7 @@ The next skill — `checkpointed-build` — refuses to run until:
 - [ ] Every slice has all mandatory fields filled in
 - [ ] Every loop has a complexity statement
 - [ ] Every slice has a stress fixture
+- [ ] The summed diff budget is computed; if it exceeds ~4,000 changed lines, the plan contains a PR partition with a mergeable definition per increment
 - [ ] The plan's claim coverage matches the design's claim list
 - [ ] Every tracker reference in the plan resolves to an existing issue whose content covers the deferred work (per the tracker discipline in `falsifiable-design`)
 
@@ -155,6 +169,7 @@ The next skill — `checkpointed-build` — refuses to run until:
 - A loop annotated `O(?)` or "depends on input." Write down what it depends on, and bound it.
 - A slice touching more than 2 files. Split it.
 - A slice estimated at more than 30 minutes. Split it.
+- "It'll be one PR at the end; the commits are clean." Clean commits make a big branch salvageable, not reviewable. Past ~4k summed lines the partition is mandatory, not aspirational.
 - A "happy path" fixture with no adversarial counterpart. Add one.
 - "Pre-typed code in the plan is mandatory." Wrong. Pre-typed code is advisory. The contract is the slice's claim, fixture, oracle, and budget.
 
@@ -168,6 +183,6 @@ A plan document with:
 
 - One section per slice.
 - Each slice has filled-in mandatory fields.
-- A `## Plan Self-Review` section at the bottom listing the five lists from step 7, all empty (no gaps).
+- A `## Plan Self-Review` section at the bottom listing the six lists from step 8, all empty (no gaps).
 
 If the plan has gaps, the skill didn't run. Run it.

@@ -220,6 +220,18 @@ If anything flagged: merge or rebase from main *before* starting the next slice.
 
 **Symptom that means you missed this step:** PR opened, `gh pr checks <N>` reports "no checks reported on the branch," zero workflow runs in the queue. GitHub Actions silently refuses to run `pull_request` workflows on PRs with conflicts and gives no surfaced signal. If you see zero CI activity within ~2 minutes of pushing a non-trivial PR, run `git diff origin/main --stat` — almost always a merge conflict.
 
+#### g3. Size tripwire (after commit, before the next slice)
+
+The plan's PR partition (`budgeted-plan` §2) was a projection. Enforce it against reality, every slice:
+
+```bash
+git diff --shortstat $(git merge-base origin/main HEAD)..HEAD
+```
+
+- **Crossed a partition boundary from the plan?** This is the ship point. Open the PR for the completed group now and continue the remaining slices on a stacked branch. Do not "finish the feature first" — the partition exists so review fires while the code is fresh and before the next group replicates its mistakes.
+- **Cumulative diff past ~4,000 changed lines and the plan has no partition?** The projection was wrong. STOP. Surface the actual number and a proposed partition of the remaining slices. This is the same stop as a budget overshoot, because it is one.
+- **Corollary: open a draft PR no later than the first partition boundary.** CI legs you don't run locally (Windows runners, exotic targets) are oracles too, and they only fire on push. An anti-pattern CI catches at slice 3 is one fix. Caught at slice 31, it is a 13-site sweep.
+
 ### 3. Repeat until all slices complete
 
 ### 4. Final integration check
@@ -241,6 +253,7 @@ If any fail, you have a regression introduced somewhere in the slice chain. Bise
 - Implementation requires a decision the plan didn't make. Stop. Ask.
 - A test fails for a reason the plan didn't anticipate. Stop. Ask. **Do not "fix" the test to make it pass.**
 - A slice takes more than 2x its estimated time. Stop. Reassess.
+- The cumulative diff crossed the plan's partition boundary — or ~4,000 changed lines with no partition. Stop. Ship the completed group or split before continuing.
 - You're about to add a line of code you couldn't justify out loud to a stranger. Stop. Justify.
 - You opened a PR but `gh pr checks` reports zero checks running within 2 minutes. That's almost certainly a merge conflict — `git diff origin/main --stat` immediately before assuming a CI queue delay.
 
@@ -250,6 +263,7 @@ If any fail, you have a regression introduced somewhere in the slice chain. Bise
 - "Unit tests pass but the integration check is slow. I'll run it at the end." No. The integration check IS the gate. Run it every slice.
 - "The plan said to write this loop, so I wrote this loop, even though I see a better one." Wrong. The plan is advisory. Write the better loop. Note the deviation in the commit message.
 - "I'll batch the next three slices and run gates at the end." No. Each slice gets its own gate. Batching is how drift becomes invisible.
+- "The branch is big but the slices are clean, so review will be fine." Review quality tracks diff size, not commit hygiene. Hygiene makes the split cheap, not unnecessary.
 - "The stress fixture passed but the unit test was wrong, so the test passed." Stop. The unit test was wrong. Fix the test before you advance.
 - "PR is open but CI hasn't started — I'll wait for the queue." Wrong. GitHub Actions doesn't fire workflows on conflicted PRs and gives no surfaced signal. Zero-checks-reported is a conflict fingerprint, not a queue delay. Run `git diff origin/main --stat` first.
 - "This claim is empirically verified, no need for a regression test." Wrong. Empirical verification is one-shot; CI is permanent. Measurement-only claims silently regress. The fence is the permanent form.
