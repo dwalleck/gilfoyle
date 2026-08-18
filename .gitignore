@@ -16,4 +16,3 @@ __pycache__/
 .gilfoyle/runs/
 .pi-native-workflow/
 .pi-subagents/
-skills/interrogated-spec-workspace/

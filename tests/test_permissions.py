@@ -13,7 +13,6 @@ EXPECTED = {
 }
 PROTECTED = (
     ".pi/*",
-    "pi-skills/*",
     "skills/*",
     "agents/*",
     "crew-dag-loop.json",
@@ -41,6 +40,11 @@ class PermissionContractTests(unittest.TestCase):
             self.assertIn(f'<active_agent name="{name}">', text)
             self.assertNotIn("subagent", tools)
             self.assertIn("defaultContext: fresh", text)
+            self.assertIn("skills: gilfoyle", text)
+            self.assertIn(
+                "extensions: .pi/npm/node_modules/@gotgenes/pi-permission-system/src/index.ts",
+                text,
+            )
             self.assertIn('bash:\n    "*": deny', text)
 
     def test_only_implementer_has_mutation_tools(self):
@@ -62,10 +66,12 @@ class PermissionContractTests(unittest.TestCase):
         self.assertNotIn('"git clean *": allow', text)
         self.assertIn("recompute them and halt on any drift", text)
 
-    def test_root_isolates_non_writers(self):
-        root_skill = (ROOT / "pi-skills/gilfoyle-workflow/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("one-task parallel run with `worktree: true`", root_skill)
-        self.assertIn("hash the workflow/Kiro control plane", root_skill)
+    def test_unified_root_discloses_only_selected_stage(self):
+        root_skill = (ROOT / "skills/gilfoyle/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "Stage documents are disclosed only when their branch runs", root_skill
+        )
+        self.assertIn("Load only the selected stage document", root_skill)
 
 
 if __name__ == "__main__":

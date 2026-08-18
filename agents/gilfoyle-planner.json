@@ -17,6 +17,8 @@
     }
   },
   "resources": [
-    "skill://.kiro/skills/budgeted-plan/SKILL.md"
+    "skill://.kiro/skills/gilfoyle/SKILL.md",
+    "file://../skills/gilfoyle/references/CONTRACT.md",
+    "file://../skills/gilfoyle/references/budgeted-plan.md"
   ]
 }

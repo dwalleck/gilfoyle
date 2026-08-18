@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 import subprocess
@@ -28,14 +27,12 @@ class LivePermissionTests(unittest.TestCase):
             "---\n<active_agent name=\"isolation-probe\">\nExecute the requested Python command.\n",
             encoding="utf-8",
         )
-        shutil.copytree(ROOT / "pi-skills", self.fixture / "pi-skills")
-        (self.fixture / ".pi/settings.json").write_text(
-            json.dumps({"skills": ["../pi-skills"]}), encoding="utf-8"
-        )
+        shutil.copytree(ROOT / "skills", self.fixture / "skills")
+        shutil.copy2(ROOT / ".pi/settings.json", self.fixture / ".pi/settings.json")
         subprocess.run(["git", "init", "-q"], cwd=self.fixture, check=True)
         subprocess.run(["git", "config", "user.email", "probe@example.com"], cwd=self.fixture, check=True)
         subprocess.run(["git", "config", "user.name", "Probe"], cwd=self.fixture, check=True)
-        subprocess.run(["git", "add", ".pi", "pi-skills"], cwd=self.fixture, check=True)
+        subprocess.run(["git", "add", ".pi", "skills"], cwd=self.fixture, check=True)
         subprocess.run(["git", "commit", "-qm", "fixture"], cwd=self.fixture, check=True)
         pi = shutil.which("pi.cmd") or shutil.which("pi")
         if pi is None:
@@ -114,9 +111,12 @@ class LivePermissionTests(unittest.TestCase):
         )
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertTrue((self.fixture / "src/allowed.txt").exists())
-        self.assertFalse((self.fixture / "skills/blocked.txt").exists())
-        self.assertFalse((self.fixture / ".pi/blocked.txt").exists())
-        self.assertFalse((self.fixture / ".gilfoyle/runs/x/run-state.json").exists())
+        evidence = result.stdout + result.stderr
+        self.assertFalse((self.fixture / "skills/blocked.txt").exists(), evidence)
+        self.assertFalse((self.fixture / ".pi/blocked.txt").exists(), evidence)
+        self.assertFalse(
+            (self.fixture / ".gilfoyle/runs/x/run-state.json").exists(), evidence
+        )
 
 
 if __name__ == "__main__":

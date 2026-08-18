@@ -42,32 +42,30 @@ Because forward edges don't pipe text, a forward stage that falsifies (probe ≠
 
 ## Layout
 
-```
-gilfoyle/                            # this repo (a Claude Code plugin)
-├── .claude-plugin/                  # Claude Code plugin manifest (unchanged)
-├── skills/                          # the 7 gilfoyle skills — single source of truth
-│   ├── interrogated-spec/ … assessing-review-feedback/
-├── crew-dag-loop.json               # the 5-stage DAG (probe→design→plan→build⇄gate); installed as a reference
-├── agents/                          # Kiro agent configs (installed into .kiro/agents/)
-│   ├── gilfoyle-orchestrator.json   # owns interrogated-spec (human) + submits the crew
-│   ├── gilfoyle-prober.json         # prove-it-prototype
-│   ├── gilfoyle-designer.json       # falsifiable-design
-│   ├── gilfoyle-planner.json        # budgeted-plan
-│   ├── gilfoyle-implementer.json    # checkpointed-build + tdd-scoped
-│   ├── gilfoyle-gatekeeper.json     # final integration check + crew router
+```text
+gilfoyle/
+├── .claude-plugin/                  # Claude Code marketplace and plugin manifests
+├── plugin.json                      # Agent Plugins manifest
+├── package.json                     # Oh My Pi package marker
+├── skills/
+│   └── gilfoyle/                    # sole discoverable skill
+│       ├── SKILL.md                 # orchestrator
+│       └── references/              # workflow contract and stage documents
+├── crew-dag-loop.json               # probe→design→plan→build⇄gate DAG
+├── agents/                          # Kiro agent configs
+│   ├── gilfoyle-orchestrator.json
+│   ├── gilfoyle-prober.json … gilfoyle-gatekeeper.json
 │   └── prompts/
-│       ├── gilfoyle-orchestrator.md
-│       ├── gilfoyle-prober.md … gilfoyle-gatekeeper.md
-└── KIRO-CREW.md                     # this document
+└── KIRO-CREW.md
 ```
 
-The agents and skills ride along on the Claude Code plugin: a Kiro-specific install step copies `agents/` into `.kiro/agents/` and `skills/` into `.kiro/skills/`, and copies `crew-dag-loop.json` alongside as a reference. That is why the agent configs reference skills via `skill://.kiro/skills/<skill>/SKILL.md` — the *installed* location — even though the source lives in `skills/` here.
+The Kiro install step copies `agents/` into `.kiro/agents/`, `skills/gilfoyle` into `.kiro/skills/gilfoyle`, and `crew-dag-loop.json` alongside. Agent resources register the root orchestrator with `skill://.kiro/skills/gilfoyle/SKILL.md` and load their stage documents from `file://../skills/gilfoyle/references/`.
 
 Only the orchestrator has the `subagent` tool and a `toolsSettings.crew` grant; the five stage agents are leaves that cannot spawn anything. Tool allow-lists are scoped per role (the implementer can write `**/*` and commit; the gatekeeper writes only `<rundir>/**` and never edits oracles).
 
 ## Deployment assumptions
 
-- **Skills are single-source and installed for you.** The 7 skills live only in this repo's `skills/`. The Kiro install step places them at `.kiro/skills/`, which is what every agent's `skill://.kiro/skills/<skill>/SKILL.md` reference resolves against — no vendoring, no per-project copying by hand.
+- **One skill is installed.** The portable source is `skills/gilfoyle`. Kiro installs that directory at `.kiro/skills/gilfoyle`; each fixed-role agent registers the orchestrator and directly loads only its contract and applicable stage documents.
 - **A tracker is expected.** The skills enforce a tracker discipline (deferrals must cite a real issue ID). These configs allow `rivets` and `gh issue`; adjust the shell allow-lists for your tracker.
 - **Polyglot.** No language is hard-coded. Stages use the project's own build/test/probe commands; the shell allow-lists cover dotnet/npm/pnpm/yarn/pytest/go/cargo/maven/gradle plus probe/oracle tooling (`bash`, `python3`, `jq`, `grep`, `git`).
 - **Kiro `subagent` crew support** with `loop_to` (trigger + `max_iterations`). The loop is bounded at `max_iterations: 5`.

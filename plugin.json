@@ -1,19 +1,21 @@
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "gilfoyle",
   "version": "2.0.1",
-  "description": "One evidence-routed orchestrator for high-correctness software changes and review feedback.",
+  "description": "Evidence-routed planning, implementation, and review workflows for high-correctness software changes.",
   "author": {
     "name": "Daryl Walleck",
     "url": "https://github.com/dwalleck"
   },
+  "homepage": "https://github.com/dwalleck/gilfoyle",
   "repository": "https://github.com/dwalleck/gilfoyle",
   "license": "MIT",
   "keywords": [
     "methodology",
+    "planning",
     "reliability",
     "code-review",
     "tdd",
-    "verification",
-    "skills"
+    "verification"
   ]
 }

@@ -19,7 +19,9 @@
     }
   },
   "resources": [
-    "skill://.kiro/skills/falsifiable-design/SKILL.md",
-    "skill://.kiro/skills/prove-it-prototype/SKILL.md"
+    "skill://.kiro/skills/gilfoyle/SKILL.md",
+    "file://../skills/gilfoyle/references/CONTRACT.md",
+    "file://../skills/gilfoyle/references/falsifiable-design.md",
+    "file://../skills/gilfoyle/references/prove-it-prototype.md"
   ]
 }

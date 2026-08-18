@@ -21,7 +21,9 @@
     }
   },
   "resources": [
-    "skill://.kiro/skills/interrogated-spec/SKILL.md",
-    "skill://.kiro/skills/assessing-review-feedback/SKILL.md"
+    "skill://.kiro/skills/gilfoyle/SKILL.md",
+    "file://../skills/gilfoyle/references/CONTRACT.md",
+    "file://../skills/gilfoyle/references/interrogated-spec.md",
+    "file://../skills/gilfoyle/references/assessing-review-feedback.md"
   ]
 }

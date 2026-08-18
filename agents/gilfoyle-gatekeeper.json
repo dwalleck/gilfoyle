@@ -18,7 +18,9 @@
     }
   },
   "resources": [
-    "skill://.kiro/skills/checkpointed-build/SKILL.md",
-    "skill://.kiro/skills/falsifiable-design/SKILL.md"
+    "skill://.kiro/skills/gilfoyle/SKILL.md",
+    "file://../skills/gilfoyle/references/CONTRACT.md",
+    "file://../skills/gilfoyle/references/checkpointed-build.md",
+    "file://../skills/gilfoyle/references/falsifiable-design.md"
   ]
 }

@@ -5,11 +5,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTECTED = (ROOT / "skills", ROOT / "agents", ROOT / "crew-dag-loop.json")
-EXPECTED_DIGEST = "86a8c6eb7b2467c9b8fde65b5a6f846df3f64387513108f07a93e00b460fc4b4"
+EXPECTED_DIGEST = "a403d0a5bdda8eca0f202f5e4eb4050fe0855539e5aecbbce8d80362322f33bc"
 IGNORED = (
     ".gilfoyle/runs/naïve path/run-state.json",
     ".pi-native-workflow/probe.tmp",
-    "skills/interrogated-spec-workspace/case.tmp",
     ".pi-subagents/runtime.tmp",
     "tests/__pycache__/case.pyc",
 )
@@ -19,7 +18,7 @@ def protected_digest():
     files = []
     for root in PROTECTED:
         files.extend([root] if root.is_file() else [p for p in root.rglob("*") if p.is_file()])
-    files = [p for p in files if ".pi-subagents" not in p.parts and "interrogated-spec-workspace" not in p.parts]
+    files = [p for p in files if ".pi-subagents" not in p.parts]
     digest = hashlib.sha256()
     for path in sorted(files):
         digest.update(path.relative_to(ROOT).as_posix().encode() + b"\0" + path.read_bytes())

@@ -1,8 +1,8 @@
 # gilfoyle
 
-A skill suite for building software that is *right*, not fast. The premise is that most of the bugs you ship come from process disciplines that audit themselves rather than reaching outside the design document to compare against reality.
+A workflow skill for building software that is *right*, not fast. The premise is that most of the bugs you ship come from process disciplines that audit themselves rather than reaching outside the design document to compare against reality.
 
-This suite forces the reach.
+Gilfoyle forces the reach.
 
 ## What we ship
 
@@ -49,9 +49,11 @@ The loop has five mandatory gates that reach *outside the document*. Spec vs req
 
 `assessing-review-feedback` applies the same epistemic discipline to *incoming* review comments. A reviewer's finding is a hypothesis with two parts (the bug claim and the fix claim); the skill demands both be verified per finding before applying changes.
 
-## The skills
+## The orchestrator and stages
 
-| Skill | Replaces | Purpose |
+`gilfoyle` is the sole discoverable skill. It selects one entry branch, then progressively discloses only the stage needed for the current gate.
+
+| Stage | Replaces | Purpose |
 |---|---|---|
 | `interrogated-spec` | (nothing — this is new) | Grill the requester one question at a time until every vague noun is resolved, every success criterion is measurable, every edge has a decision, and the requester has signed off in their own words. |
 | `prove-it-prototype` | (nothing — this is new) | Build a probe that runs against the real system, define an independent oracle, refuse to proceed until they agree. |
@@ -95,61 +97,60 @@ If you are writing a small utility from scratch with no underlying system to dep
 
 ## Voice
 
-The skills are written in a tone that doesn't waste words. They state rules, list red flags, and refuse to soften their gates. The skills will not validate your enthusiasm. They will check your work.
+The orchestrator and stage documents are written in a tone that doesn't waste words. They state rules, list red flags, and refuse to soften their gates. Gilfoyle will not validate your enthusiasm. It will check your work.
 
 If the tone reads as cynical: the cynicism is calibrated. We have seen too many features that "work on the test fixture" ship bugs that lived in the gap between the fixture and reality. The gates close that gap. The voice signals that we mean it.
 
 ## How to install
 
-### As a Claude Code plugin (recommended)
+### Claude Code plugin
 
-The repo is structured as a Claude Code plugin and ships its own marketplace manifest. Install in any of these ways:
+The root Claude Code manifest exposes the unified `gilfoyle` skill:
 
 ```bash
-# From the marketplace (preferred — one-time setup, then easy updates)
+# Marketplace
 /plugin marketplace add dwalleck/gilfoyle
 /plugin install gilfoyle@gilfoyle
 
-# Direct install from the GitHub remote
+# GitHub
 /plugin install https://github.com/dwalleck/gilfoyle
 
-# From a local clone
-/plugin install C:\path\to\gilfoyle
-# or
+# Local clone
 /plugin install /path/to/gilfoyle
 ```
 
-Once installed, the seven skills appear in your `Skill` tool's available-skills list. Invoke directly:
+### Agent Skills CLI
 
-```
-Skill interrogated-spec
-Skill prove-it-prototype
-Skill falsifiable-design
-Skill budgeted-plan
-Skill checkpointed-build
-Skill tdd-scoped
-Skill assessing-review-feedback
+```bash
+npx skills add https://github.com/dwalleck/gilfoyle --skill gilfoyle
+
+# Local clone
+npx skills add . --skill gilfoyle
 ```
 
-Or just describe what you're doing — Claude will pick the right skill from the skill's `description` frontmatter.
+### Oh My Pi
 
-### As a bare skill directory (no plugin install)
+```bash
+omp plugin install .
+```
 
-If your agent doesn't support plugin installation, point its skill-search at this repo's `skills/` subtree manually. Each skill is a `SKILL.md` with `name` + `description` frontmatter. The skills cross-reference each other by name; the suite assumes you can invoke them in sequence and that each downstream skill enforces its gate against the upstream skill's outputs.
+### Bare skill directory
 
-We are not going to write a configuration system. You can configure your tools.
+Point the client's skill search at `skills`, or copy `skills/gilfoyle` into its skill directory.
+
+Every installation exposes one skill:
+
+```text
+gilfoyle
+```
+
+Describe the change or review feedback. The orchestrator selects the applicable branch and discloses its stages in order.
 
 ## When to invoke
 
-At the start of any non-trivial work:
+Invoke `gilfoyle` for a nontrivial code change or whenever review feedback proposes a code change. It routes implementation work through Local, Structural, or Empirical evidence and gives review feedback precedence over ordinary change work.
 
-- **Feature request from a human in natural language** ("we want unread count on the inbox," "make permissions auditable," "users are complaining about X") → start with `interrogated-spec`. Pin the spec before you probe the system.
-- **New feature** on top of an existing system, with a spec already pinned → start with `prove-it-prototype`. Don't skip to design until probe and oracle agree.
-- **Bug fix that spans multiple files** → start with `prove-it-prototype` against the bug itself; the probe + oracle pair becomes the regression test.
-- **Refactor that changes public surface** → start with `falsifiable-design`; the cheapest falsifier is the smoke test that the refactor doesn't lose any caller.
-- **PR review feedback arrives** → invoke `assessing-review-feedback` BEFORE applying any reviewer suggestions.
-
-For trivial work (typos, single-function changes with no behavior change, doc edits), don't invoke the loop — it's process overhead for nothing.
+For trivial work such as typos, formatting, or documentation-only edits, use the repository's normal focused process.
 
 ## Hail Satan
 
@@ -157,8 +158,8 @@ Build the thing. Check it against reality. Stop when drift appears. Ship when it
 
 ## Running the loop autonomously (Kiro)
 
-The skills above are the methodology. `agents/` + `crew-dag-loop.json` package that methodology as an autonomous [Kiro CLI](https://kiro.dev) crew: after you sign off on the spec (the one human gate), a five-stage DAG — probe → design → plan → build ⇄ gate — runs unattended and **stops the moment a claim is falsified**, surfacing which leg (implementation / oracle / design / substrate) is implicated for you to adjudicate.
+The stage documents above are the methodology. `agents/` + `crew-dag-loop.json` package it as an autonomous [Kiro CLI](https://kiro.dev) crew: after you sign off on the spec (the one human gate), a five-stage DAG — probe → design → plan → build ⇄ gate — runs unattended and **stops the moment a claim is falsified**, surfacing which leg (implementation / oracle / design / substrate) is implicated for you to adjudicate.
 
-The crew rides along on this Claude Code plugin: a Kiro install step copies `agents/` into `.kiro/agents/`, `skills/` into `.kiro/skills/`, and `crew-dag-loop.json` alongside as a reference. Skills stay single-source here.
+The Kiro install step copies `agents/` into `.kiro/agents/`, the unified skill from `skills/gilfoyle` into `.kiro/skills/gilfoyle`, and `crew-dag-loop.json` alongside as a reference.
 
 See **[KIRO-CREW.md](./KIRO-CREW.md)** for the architecture, the Class-A (self-heal) vs Class-B (halt) loop polarity, and usage.
