@@ -11,8 +11,8 @@ All artifacts for one change live directly in the canonical directory `.<change-
 | `route.md` | [`change-workflow`](references/change-workflow.md) | Selected route, criterion-by-criterion evidence, required artifacts, `N/A` rationale for skipped artifacts |
 | `spec.md` | [`interrogated-spec`](references/interrogated-spec.md) | Observable behavior and verbatim requester approval |
 | `evidence.md`, `probe.*` | [`prove-it-prototype`](references/prove-it-prototype.md) | Empirical premises, independent oracle, comparisons, validated/learned notes. Never a design doc |
-| `design.md` | [`falsifiable-design`](references/falsifiable-design.md) | Placement, claims, falsifiers, independent oracles, named mutations, regression fences, approval |
-| `plan.md` | [`budgeted-plan`](references/budgeted-plan.md) | PR increments and independently-green atomic slices |
+| `design.md` | [`falsifiable-design`](references/falsifiable-design.md) | Placement, approved module ledger when applicable, claims, falsifiers, independent oracles, named mutations, regression fences, approval |
+| `plan.md` | [`budgeted-plan`](references/budgeted-plan.md) | PR increments, independently-green atomic slices, and module growth ledger when applicable |
 | `review-decisions.md` | [`assessing-review-feedback`](references/assessing-review-feedback.md) | Per-finding accept/modify/reject decisions; used when no PR-native decision surface is specified |
 
 Single-owner rules:

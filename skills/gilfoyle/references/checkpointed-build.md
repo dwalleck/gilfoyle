@@ -16,12 +16,13 @@ Slice completion is this stage's job, and this is the whole gate. One checkpoint
 2. **PENDING falsifiers** assigned to this slice run and pass — or `N/A — reason` when no falsifier is pending here. `PENDING` is a lifecycle status, not a gate state, per [workflow contract](references/CONTRACT.md): it marks a falsifier awaiting discharge by a named owner and step.
 3. **Stress fixture** produces the plan's expected outcome — or `N/A — reason` when the plan records no fixture for this slice.
 4. **Changed implementation vs independent oracle** agree on the plan's input.
-5. **Production-scale budget** holds for every applicable loop and always-on phase, measured against the plan — with a separate `N/A — reason` for each budget class the plan marks inapplicable.
-6. **Regression fence** green — or `N/A — approved risk: <reason>` when the design records that exact value in the claim's Regression fence cell and the Approval section.
-7. **Named mutation** red, for every new fence this slice adds — or `N/A — approved risk: no fence to mutate` when the plan records that exact value.
-8. **Fence restored** green — or `N/A — approved risk: no fence to restore` when item 6 carries an approved-risk `N/A`.
+5. **Approved module shape** holds: actual responsibility and interface ownership, dependency direction, protected-parent deltas, and paths match `design.md` and `plan.md`; the module-shape fence passes — or `N/A — route and design record no module-shape change`.
+6. **Production-scale budget** holds for every applicable loop and always-on phase, measured against the plan — with a separate `N/A — reason` for each budget class the plan marks inapplicable.
+7. **Regression fence** green — or `N/A — approved risk: <reason>` when the design records that exact value in the claim's Regression fence cell and the Approval section.
+8. **Named mutation** red, for every new fence this slice adds — or `N/A — approved risk: no fence to mutate` when the plan records that exact value.
+9. **Fence restored** green — or `N/A — approved risk: no fence to restore` when item 8 carries `N/A — approved risk: no fence to mutate`.
 
-Item 2 is the design's one-shot falsifier experiment; items 6-8 are its permanent fence. A row can discharge its falsifier here and still owe its fence. When the pending falsifier and Regression fence name the same deterministic test, run it once and record that result for both items 2 and 6.
+Item 2 is the design's one-shot falsifier experiment; items 7-9 are its permanent fence. A row can discharge its falsifier here and still owe its fence. When the pending falsifier and Regression fence name the same deterministic test, run it once and record that result for both items 2 and 7. When the module-shape fence is also a claim's Regression fence, run it once and record that result for both items 5 and 7.
 
 A `FAIL` on any applicable item stops the slice: no commit, no next slice. A failed gate never authorizes shipping. A known issue may explain a failure; it never waives it.
 
@@ -33,6 +34,7 @@ Read `plan.md` top to bottom. Flag any slice where a field that actually appears
 - A **stress fixture** too gentle to fail a plausible bug (three items do not surface scaling bugs).
 - An **oracle** coupled to the implementation (an oracle that calls the function the slice implements is not an oracle).
 - **Documented preconditions** with missing or misclassified enforcement: a load-bearing-for-correctness precondition needs a runtime check that survives release builds; a sanity hint gets a `debug_assert!`.
+- A **Module shape** field or growth-ledger projection that omits a touched module, permits a protected parent to gain responsibility, treats line count as proof of depth, or lacks a localized shape-fence result. Read [module shape](references/module-shape.md) for the applicable contract.
 
 Raise concerns before writing any code. The plan is allowed to be wrong; catching it now is free. If a field is absent, the plan's hard gate already refused it — do not invent substitute checks.
 
@@ -82,17 +84,18 @@ Asymmetry is allowed. Unintentional asymmetry is the bug class this audit catche
 
 ### 5. Run the gate — once, after the slice
 
-Run the eight items from **The gate** in order and record each state as `PASS`, `FAIL`, or `N/A — reason`. The mechanics:
+Run the nine items from **The gate** in order and record each state as `PASS`, `FAIL`, or `N/A — reason`. The mechanics:
 
 - **Affected unit tests.** Run the tests covering the slice's changed executable behavior. They must pass. A test rewritten to accept the bug is not a pass. If the slice changes no executable behavior and the plan names no affected tests, record the plan-backed `N/A — reason`.
-- **PENDING falsifiers.** For every falsifier the plan assigns to this slice whose design Status is `PENDING` — the discharge owner and step named in design/plan per [workflow contract](references/CONTRACT.md) (`PENDING` is a lifecycle status, not a gate state) — run the falsifier with the exact command the plan's Commands and expected results field records. Record `PASS` or `FAIL`. A `FAIL` blocks the slice: the claim is falsified, and only a design revision (per the contract's approval semantics) re-opens it. Rows already `PASS` need no run; when no falsifier is pending here, record `N/A — reason`. Distinct from items 6-8: this runs the one-shot falsifier; those run its permanent fence.
+- **PENDING falsifiers.** For every falsifier the plan assigns to this slice whose design Status is `PENDING` — the discharge owner and step named in design/plan per [workflow contract](references/CONTRACT.md) (`PENDING` is a lifecycle status, not a gate state) — run the falsifier with the exact command the plan's Commands and expected results field records. Record `PASS` or `FAIL`. A `FAIL` blocks the slice: the claim is falsified, and only a design revision (per the contract's approval semantics) re-opens it. Rows already `PASS` need no run; when no falsifier is pending here, record `N/A — reason`. Distinct from items 7-9: this runs the one-shot falsifier; those run its permanent fence.
 - **Stress fixture.** Run the plan's fixture; compare actual to expected. Exact match required — or record the plan's `N/A — reason` when the plan records no fixture for this slice.
 - **Changed implementation vs oracle.** Run the slice's changed implementation on the input recorded in the plan, then run the plan's independent oracle on that same input and compare their observable outputs item by item. On an Empirical route, include the workspace and evidence oracle established by [`prove-it-prototype`](references/prove-it-prototype.md); on a Structural route, use the design row's oracle and plan-defined input. The subject is the changed implementation, never the probe. They must agree.
+- **Module shape.** When the plan's Module shape field applies, read [module shape](references/module-shape.md), compare the actual production tree and diff with the approved module ledger and growth ledger, and run the exact shape-fence command. Check responsibility owners, interfaces, dependency direction, protected parents, required/forbidden paths, and numeric tripwires. A numeric overrun with unchanged placement returns to `budgeted-plan`; a new responsibility, wider interface, different seam, or pass-through split returns to `falsifiable-design` and requester approval. Use the exact route/design-backed `N/A` only when module shape does not apply.
 - **Budget.** For every loop the slice introduced, confirm the production-scale cost against the plan's loop budget. For every always-on phase, measure wall-clock against the plan's wall budget. Record each applicable result separately; use the corresponding plan-backed `N/A — reason` only for a budget class the slice does not introduce. Measure with `time`, `hyperfine`, or a benchmark harness — eyeballing does not count.
-- **Fence.** Run the regression fence this slice created for its claim — the named test from the plan's Regression fence field (the design's Falsification table names it). If the design records `N/A — approved risk: <reason>` for the claim's fence and records that acceptance in its Approval section, carry that exact value into the gate record; no run is owed.
-- **Mutation.** For every NEW fence this slice adds: apply the exact buggy implementation the design's Named mutation field records for it, run the fence — it must go red — then restore the code and confirm the fence is green again. A fence that has only ever been seen green is not evidence. If the fence stays green under its own mutation, the fixture is blind to the bug: change the fixture, not the assertion, and do not skip the mutation because "the code is obviously right." A mutation that will not compile, that requires an action the design forbids, or that leaves the fence's observable unchanged is not applicable as written: correct it against [`falsifiable-design`](references/falsifiable-design.md)'s Named mutation criteria — keeping the claim, the oracle, and the intent — and record the correction. **Verify applicability immediately after implementing, before running the gate**, so a fence that cannot fail is caught while the code is fresh rather than at the checkpoint. When a fence turns red, confirm it fails for the **specific** reason the row claims; a fence satisfied by some other cause is passing for the wrong reason even while it is red. If no mutation can turn the fence red without also turning a *different* assertion red, the fence is redundant with that assertion — cut it. Record each mutation and its result in the commit message. When the plan records `Named mutation: N/A — approved risk: no fence to mutate`, carry that exact value into item 7 and record `N/A — approved risk: no fence to restore` for item 8.
+- **Fence.** Run the regression fence this slice created for its claim — the named test from the plan's Regression fence field (the design's Falsification table names it). If the design records `N/A — approved risk: <reason>` for the claim's fence and records that acceptance in the Approval section, carry that exact value into the gate record; no run is owed.
+- **Mutation.** For every NEW fence this slice adds: apply the exact buggy implementation the design's Named mutation field records for it, run the fence — it must go red — then restore the code and confirm the fence is green again. A fence that has only ever been seen green is not evidence. If the fence stays green under its own mutation, the fixture is blind to the bug: change the fixture, not the assertion, and do not skip the mutation because "the code is obviously right." A mutation that will not compile, that requires an action the design forbids, or that leaves the fence's observable unchanged is not applicable as written: correct it against [`falsifiable-design`](references/falsifiable-design.md)'s Named mutation criteria — keeping the claim, the oracle, and the intended buggy property fixed — and record the correction before rerunning. When the plan records `Named mutation: N/A — approved risk: no fence to mutate`, carry that exact value into item 8 and record `N/A — approved risk: no fence to restore` for item 9.
 
-**Completion:** all eight gate items recorded — each `PASS`, `FAIL`, or `N/A — reason`.
+**Completion:** all nine gate items recorded — each `PASS`, `FAIL`, or `N/A — reason`.
 
 ### 6. On any FAIL — one action
 
@@ -131,7 +134,7 @@ Per [workflow contract](references/CONTRACT.md) branch discovery, fetch the defa
 - Flag: upstream changed a file this branch also changed since the last check (conflict risk); this slice introduced divergence on generated or structured files (append-only JSONL, lockfiles, schema dumps); a file this slice did not touch shows large new divergence.
 - Do **not** flag lockfile/JSONL changes the plan records as intentional branch changes — they are expected, not drift, and are not re-flagged every slice.
 
-If anything is flagged: merge or rebase upstream before starting the next slice. Prefer a merge commit (preserves slice history) over a rebase (rewrites it, breaking pushed hashes other reviewers may be reading). After merging or rebasing, rerun the current slice's gate — the eight items — before advancing: upstream movement can change what the slice's checks observe.
+If anything is flagged: merge or rebase upstream before starting the next slice. Prefer a merge commit (preserves slice history) over a rebase (rewrites it, breaking pushed hashes other reviewers may be reading). After merging or rebasing, rerun the current slice's gate — the nine items — before advancing: upstream movement can change what the slice's checks observe.
 
 ### 10. Size tripwire — after commit, before the next slice
 
@@ -148,7 +151,9 @@ After every slice has passed, run the assembled implementation against every app
 
 The three are related but distinct: the **oracle** independently computes the implementation's observable answer; the **falsifier** is the experiment that would prove a claim false, often one-shot; the **regression fence** is the permanent form of the falsifier that catches future regressions. If the fence is the same artifact as the falsifier (both deterministic tests), run it once and count it as both.
 
-If anything fails, the slice chain regressed: bisect to the slice, stop, surface.
+When module shape applies, also execute [module shape](references/module-shape.md)'s **Final design-conformance review** in a separate reviewer or fresh process/context that did not receive the implementation transcript, plan rationale, or approved ledger. Record the isolation method and reconstructed module/interface/responsibility map before revealing `design.md`; then record every mismatch, disposition, and final comparison result. Fix every mismatch or revise and reapprove the design. Same-context implementer self-attestation does not satisfy the review.
+
+If any behavioral check or module-ledger comparison fails, the slice chain regressed: bisect to the slice, stop, surface.
 
 ## Red flags
 
@@ -167,4 +172,4 @@ This is not "follow the plan." This is "advance the design hypothesis by one sli
 
 ## Output
 
-For each slice: one commit, with the gate record attached (every item `PASS` or `N/A — reason`; no `FAIL`). After the final slice: a clean run of every implementation/oracle comparison, falsifier, and regression fence against the assembled implementation. If any of that is missing, the stage did not finish. Finish it.
+For each slice: one commit, with all nine gate items attached (every item `PASS` or `N/A — reason`; no `FAIL`). After the final slice: a clean run of every implementation/oracle comparison, falsifier, and regression fence against the assembled implementation, plus the fresh-context design-conformance record and `PASS` comparison when module shape applies. If any of that is missing, the stage did not finish. Finish it.

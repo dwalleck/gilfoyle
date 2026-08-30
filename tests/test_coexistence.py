@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTECTED = (ROOT / "skills", ROOT / "agents", ROOT / "crew-dag-loop.json")
-EXPECTED_DIGEST = "a403d0a5bdda8eca0f202f5e4eb4050fe0855539e5aecbbce8d80362322f33bc"
+EXPECTED_DIGEST = "d712cb0b46c1029c25a198e1b541521e9266fca31d46ede7efbef2db17533377"
 IGNORED = (
     ".gilfoyle/runs/naïve path/run-state.json",
     ".pi-native-workflow/probe.tmp",

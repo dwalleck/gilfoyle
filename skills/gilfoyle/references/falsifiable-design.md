@@ -73,17 +73,19 @@ Criterion: every broken invariant has a claim row or a still-safe note; a purely
 
 ### 4. Place the design
 
-This step anchors the design to structure — which module owns each capability and what the implementer may not do. The procedure is self-contained. If the environment exposes a skill named `codebase-design`, read it before this step and use its vocabulary (module, interface, depth, seam, adapter) to sharpen the answers; no step here requires it.
+This step anchors the design to structure — which module owns each capability, what interface callers and tests use, and what the implementer may not do. If the environment exposes a skill named `codebase-design`, read it before this step and use its vocabulary (module, interface, depth, seam, adapter).
 
-For each new capability, answer in writing:
+Read `route.md`'s T2 evidence. When T2 records a module-shape change, read [module shape](references/module-shape.md) and execute its complete **Design procedure**: inventory the current cluster; test the seams; produce three materially different alternatives where ownership is a decision; approve the module and protected-parent ledgers; and define the mechanical shape claim. Record the results under **Module shape** in `design.md`. When T2 records no module-shape change, record `Module shape: N/A — <the T2 evidence that responsibility ownership is unchanged>`.
 
-- **Owner** — the existing module or crate that owns it. If it could plausibly live in more than one place, say in one sentence why the named owner wins.
-- **New seam** — if no existing module can own it, the feature introduces a new interface. Generate at least two competing interface shapes: different ownership of the seam, different abstraction levels, different call sites. Write one sentence of trade-offs per shape and commit to one with a reason. A capability that slots behind an existing interface needs no new seam — say so.
-- **Forbidden** — what the implementer may not do: dependency directions that must not appear, layers that must not re-implement or re-validate this capability, call sites that must not reach the internals directly.
+For every new capability, including a capability behind an unchanged shape, answer:
 
-Each placement decision that could silently regress becomes a claim with a **mechanical** falsifier: visibility that makes the wrong call site a compile error, a dependency-direction check, or a test written in the owning crate — a test can only exercise code placed where the test can see it. "The reviewer will notice" is not a falsifier.
+- **Owner** — the existing module or crate that owns it. If more than one owner is plausible, the module-shape alternatives decide; one-sentence intuition is insufficient.
+- **New seam** — the selected interface when no existing module can own it. A capability behind an existing interface says so. A generic seam with one real adapter is rejected unless an intrinsic ownership constraint recorded by the module-shape procedure makes the seam real.
+- **Forbidden** — dependency directions, responsibility duplication, internal call sites, and implementation knowledge that must not cross the seam.
 
-Criterion: every new capability has Owner, New seam, and Forbidden recorded; every structural claim has a mechanical falsifier.
+Each placement decision that could silently regress becomes a claim with a **mechanical** falsifier: visibility that makes the wrong call site a compile error, a dependency-direction check, a test written in the owning crate, or the approved module-shape fence. "The reviewer will notice" is not a falsifier.
+
+Criterion: every new capability has Owner, New seam, and Forbidden recorded; T2's module-shape branch is complete or carries its evidence-backed `N/A`; every structural claim has a mechanical falsifier.
 
 ### 5. Write claims
 
@@ -139,9 +141,10 @@ Run this checkable list before writing `design.md`:
 6. Every measurement-based falsifier has a deterministic regression fence, or an approved `N/A — approved risk`.
 7. Every deferral phrase is classified with a verified tracker ID or a permanent-non-goal rationale.
 8. Every new capability has Owner, New seam, and Forbidden; every structural claim has a mechanical falsifier.
-9. The cheapest falsifier has run and passed; no row has Status `FAIL`; every `PENDING` row names its discharge owner and step.
+9. When T2 records module shape, the inventory, alternatives, approved ledger, protected parents, shape claim, oracle, and mutation satisfy [module shape](references/module-shape.md); otherwise the section cites T2's `N/A`.
+10. The cheapest falsifier has run and passed; no row has Status `FAIL`; every `PENDING` row names its discharge owner and step.
 
-Criterion: all nine hold. A failed check means the design is wrong — fix it, do not waive it.
+Criterion: all ten hold. A failed check means the design is wrong — fix it, do not waive it.
 
 ### 10. Write design.md
 
@@ -150,17 +153,18 @@ Criterion: all nine hold. A failed check means the design is wrong — fix it, d
 - **Route and inputs** — the step-1 extraction (route, behavior set, empirical premises, source pointers).
 - **Input shapes** — the step-2 enumeration with statuses.
 - **Placement** — Owner, New seam, and Forbidden per capability.
+- **Module shape** — current cluster, alternatives, approved module ledger, protected parents, and shape fence; or `N/A —` T2 evidence.
 - **Claims** — the numbered claim list.
 - **Falsification** — the step-6 table.
 - **Non-goals and future work** — permanent non-goals with rationale; intended future work with verified tracker IDs.
 - **Falsifier run log** — the cheapest falsifier's command and result.
 - **Approval** — the step-11 record.
 
-Criterion: every section is populated; the table has no empty cells.
+Criterion: every section is populated; the table has no empty cells; the Module shape section satisfies its branch.
 
 ### 11. Get requester approval
 
-Present the design to the requester: claims, placement, the Falsification table, non-goals, the cheapest falsifier's result, and every risk acceptance (rows with `Regression fence: N/A — approved risk`). Ask for approval in their own words.
+Present the design to the requester: claims, placement, the Module shape ledger and protected parents when applicable, the Falsification table, non-goals, the cheapest falsifier's result, and every risk acceptance (rows with `Regression fence: N/A — approved risk`). Ask for approval in their own words.
 
 Record in the Approval section:
 
@@ -184,6 +188,7 @@ Criterion: the Approval section contains the requester's dated, verbatim words a
 - the cheapest falsifier run, with a `PASS` recorded in Status and the run log;
 - the non-goals/future-work section with the tracker taxonomy applied;
 - the placement decisions (Owner / New seam / Forbidden);
+- the approved module ledger, protected parents, and module-shape fence when T2 applies, or the evidence-backed `N/A`;
 - the Approval section with the requester's verbatim words, the date, and the approved risk-acceptance list.
 
 If any of these is missing, the stage did not run.

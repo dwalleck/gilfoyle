@@ -6,16 +6,16 @@ A change takes exactly one of three routes. The route decides which evidence the
 
 ## The three routes
 
-- **Local** — behavior explicit; no unverified external or system premise; no public API, schema, or module-boundary change; no cross-module placement change; no production-scale risk. Normal repository fix/TDD plus focused behavioral verification; `route.md` is the only artifact.
+- **Local** — behavior explicit; no unverified external or system premise; no public API, schema, or module-shape change; no responsibility moves between modules; no production-scale risk. A change within one existing responsibility remains Local even when its file is large. Normal repository fix/TDD plus focused behavioral verification; `route.md` is the only artifact.
 - **Empirical** — a design premise depends on existing-system or external behavior not covered by current applicable evidence. Sequence: interrogate unresolved behavior → probe/oracle evidence → design approval → plan → checkpointed build.
-- **Structural** — every non-Local change without an unverified empirical premise: public API/schema/boundary changes, cross-module placement, or production-scale risk. Sequence: interrogate unresolved behavior → design approval → plan → checkpointed build.
+- **Structural** — every non-Local change without an unverified empirical premise: public API/schema changes, module-shape or dependency-direction changes, responsibility moves, new behavior in a multi-responsibility orchestrator/facade, or production-scale risk. Sequence: interrogate unresolved behavior → design approval → plan → checkpointed build.
 
 ## Route selection
 
 Answer all four tests against the change request and the repository, and record every verdict with its evidence in `route.md`. Then apply precedence: Empirical > Structural > Local; the first test in precedence order that fires selects the route.
 
 1. **T1 Empirical premise** — Does any design premise depend on existing-system or external behavior not covered by current applicable evidence? Applicable evidence is current repository evidence or an existing `evidence.md` that still covers the premise. Evidence is stale when the thing it verified has changed since it was recorded — code path, dependency version, external API, or data shape — so the premise no longer describes current behavior. Unverified or stale → **Empirical**. The evidence row names the premise and the evidence (or why it is stale).
-2. **T2 Structural boundary** — Does the change alter a public API, schema, or module boundary, or require cross-module placement decisions? YES → **Structural**.
+2. **T2 Structural module shape** — Does the change alter a public interface, schema, seam, dependency direction, or responsibility owner; split, merge, or delete a production module in a way that changes ownership or interfaces; create a production module expected to accumulate substantial implementation; or add a responsibility cluster to an orchestrator, facade, or other multi-responsibility file? YES → **Structural**. Record the affected modules, their current responsibilities and interfaces, candidate owners, and any protected parent. Existing size or implementation growth behind an unchanged interface alone is not a YES: a local change within an existing responsibility can remain Local.
 3. **T3 Production-scale risk** — Does the change carry production-scale risk: latency, throughput, memory, concurrency, or data volume? YES → **Structural**; record why — budget and stress-fixture machinery is required, and Local has none.
 4. **T4 Explicit behavior** — Is the requested behavior fully explicit: observable given/when/then with no unresolved decisions? NO → **Structural**; record why — interrogation is required, and Local has none. When the verdict is yes, the evidence row records the complete observable behavior contract as given/when/then triples — the behavior source for [`falsifiable-design`](references/falsifiable-design.md) when `spec.md` is `N/A`.
 
@@ -31,14 +31,14 @@ Routing is a one-time decision recorded in `route.md`. A downstream stage loaded
 
 1. **Read the contract.** [workflow contract](references/CONTRACT.md) owns everything this stage references.
 2. **Name the change and locate the directory.** Derive `<change-slug>` from the change. Inspect `.<change-slug>/`: an existing `route.md` for the same change follows the adoption-or-correction rule above; a `route.md` for a different change in the same directory, or multiple plausible directories → stop and name the competing directories for the user.
-3. **Run the four tests.** Gather evidence for each: the request text, the code paths and interfaces involved, and any commands run to verify behavior. Where a test needs an answer you cannot get, record it unknown.
+3. **Run the four tests.** Gather evidence for each: the request text, the code paths and interfaces involved, and any commands run to verify behavior. A YES for T2 names current and candidate owners, the responsibility movement, affected interfaces/dependency direction, and protected parents; a NO states why responsibility ownership is unchanged. Where a test needs an answer you cannot get, record it unknown.
 4. **Select the route.** Apply the mapping in Route selection.
 5. **Write `route.md`.** Fill the template below completely: every conditional field as `N/A — reason`.
 6. **Hand off.** Local → implement with the repository's normal fix/TDD process, run the focused verification named in `route.md`, then return to this stage and append the command, date, and `PASS` or `FAIL` result under `Terminal criterion`; this stage owns that record. Structural or Empirical with unresolved behavior (T4 `no` or unknown) → read [`interrogated-spec`](references/interrogated-spec.md). Empirical with explicit behavior → read [`prove-it-prototype`](references/prove-it-prototype.md). Structural with explicit behavior → read [`falsifiable-design`](references/falsifiable-design.md). A receiving stage owns the next hand-off.
 
 ## Completion criterion
 
-`route.md` exists with: all four tests answered (verdict + evidence), the selected route matching the verdict vector, the complete given/when/then behavior contract recorded in T4 evidence when the verdict is yes (the behavior source when `spec.md` is `N/A`), required artifacts listed with owners, and every skipped artifact carrying `N/A — reason`. The route's terminal criterion below is checked after routing: this stage records the Local result; downstream stages satisfy Structural and Empirical criteria.
+`route.md` exists with: all four tests answered (verdict + evidence), the selected route matching the verdict vector, T2 evidence naming module-shape facts or why ownership is unchanged, the complete given/when/then behavior contract recorded in T4 evidence when the verdict is yes (the behavior source when `spec.md` is `N/A`), required artifacts listed with owners, and every skipped artifact carrying `N/A — reason`. The route's terminal criterion below is checked after routing: this stage records the Local result; downstream stages satisfy Structural and Empirical criteria.
 
 ## Terminal criteria per route
 
@@ -59,7 +59,7 @@ Date: <YYYY-MM-DD>
 | # | Test | Evidence | Verdict |
 |---|------|----------|---------|
 | 1 | Empirical premise | <premise and the evidence covering it — current repository evidence or existing evidence.md — or why that evidence is stale> | no |
-| 2 | Structural boundary | <APIs/schemas/modules touched, placement decisions needed> | no |
+| 2 | Structural module shape | <interfaces/schemas/seams/dependencies/responsibility owners touched; current and candidate owners; protected parents — or why ownership is unchanged> | no |
 | 3 | Production-scale risk | <scale dimensions and the load they would see> | no |
 | 4 | Explicit behavior | <given/when/then triples of the complete observable behavior contract when verdict is yes (behavior source, since spec.md is N/A); unresolved decisions when verdict is no> | yes |
 

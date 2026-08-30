@@ -35,7 +35,7 @@ On review re-entry:
 
 1. Run Process step 1 against the current approved design.
 2. Preserve every unaffected slice and PR increment. Revise the uncommitted owning slice, or append one review-fix slice when that slice is already committed.
-3. Name every resolved finding ID in the review-fix slice's Purpose. Map the root-cause behavior to existing design Claim IDs and fill all thirteen fields. No covering design row means the design is incomplete: return to [`falsifiable-design`](references/falsifiable-design.md) before planning the fix.
+3. Name every resolved finding ID in the review-fix slice's Purpose. Map the root-cause behavior to existing design Claim IDs and fill all fourteen fields. No covering design row means the design is incomplete: return to [`falsifiable-design`](references/falsifiable-design.md) before planning the fix.
 4. Apply Process step 3 to every changed or appended slice, then apply Process steps 4–6 to the whole plan.
 
 Criterion: the plan changes only where the accepted findings require it; every review-fix slice is traceable to its finding IDs and design claims; every global plan criterion still holds.
@@ -46,9 +46,9 @@ Each step ends with a completion criterion. Do not start the next step until the
 
 ### 1. Verify the approved design
 
-Read `design.md` top to bottom. Confirm the Falsification table is complete (no empty cells, `N/A — reason` in conditional cells, `N/A — approved risk` in fence cells), the cheapest falsifier's Status is `PASS`, no row has Status `FAIL`, every `PENDING` entry names its discharge owner and step, and the Approval section holds the requester's verbatim words, the date, and the approved risk-acceptance list. Flag any design row whose oracle, mutation, or fence is not specific enough to check mechanically, and return it to [`falsifiable-design`](references/falsifiable-design.md).
+Read `design.md` top to bottom. Confirm the Falsification table is complete (no empty cells, `N/A — reason` in conditional cells, `N/A — approved risk` in fence cells), the cheapest falsifier's Status is `PASS`, no row has Status `FAIL`, every `PENDING` entry names its discharge owner and step, and the Approval section holds the requester's verbatim words, the date, and the approved risk-acceptance list. When T2 records module shape, confirm the approved module ledger, protected parents, shape claim, fence, and mutation satisfy [module shape](references/module-shape.md); otherwise confirm the section cites T2's evidence-backed `N/A`. Flag any design row whose oracle, mutation, fence, or placement rule is not specific enough to check mechanically, and return it to [`falsifiable-design`](references/falsifiable-design.md).
 
-Criterion: the design satisfies [`falsifiable-design`](references/falsifiable-design.md)'s Output requirements, and every row is specific enough to plan against.
+Criterion: the design satisfies [`falsifiable-design`](references/falsifiable-design.md)'s Output requirements, every row is specific enough to plan against, and the Module shape branch is complete.
 
 ### 2. Decompose into slices at independently-green atomic seams
 
@@ -56,11 +56,12 @@ Start from the design's claim rows and decompose into slices, ordered by depende
 
 - One slice per claim, or per group of claims that cannot land apart — a seam change plus every behavior it unblocks.
 - All caller updates for a change land in the same slice as the change: a signature change, its migration, and every callsite are one slice regardless of file count.
+- Slices follow the approved module seams. A slice may move one responsibility atomically across a seam, but may not mix unrelated runtime, domain, persistence, and presentation responsibilities merely because they share a caller.
 - Every design row whose Status is `PENDING — <discharge owner/step>` is discharged by the slice implementing that row's claim: the slice's Commands and expected results field carries the exact falsifier experiment and expected outcome, while its Oracle field carries the independent comparison mechanism.
 - A slice's independent observable check must not depend on a later slice.
 - A candidate slice that cannot leave the repository green in isolation, or that has no independent observable check, is not a slice: split or merge it. File counts, line counts, and time estimates are decomposition signals, never hard limits.
 
-Criterion: the slice sequence covers every design row exactly once, each slice is atomic, independently green, has its own observable check, and every `PENDING` falsifier is assigned to the slice implementing its claim.
+Criterion: the slice sequence covers every design row exactly once, follows the approved module seams, each slice is atomic and independently green with its own observable check, and every `PENDING` falsifier is assigned to the slice implementing its claim.
 
 ### 3. Fill the mandatory slice fields
 
@@ -77,6 +78,7 @@ For every slice, record each field before any implementation. Conditional fields
 **Named mutation:**        [from the design row(s) — applied to the new fence by checkpointed-build] | N/A — approved risk: no fence to mutate (same Approval entry as the fence)
 **Complexity/production scale:** [per new loop: asymptotic cost AND production-scale input sizes AND the resulting bound AND the slice's explicit maximum accepted cost with its rationale] | N/A — reason
 **Wall budget/phase:**     [phase: always-on | one-off; always-on phases record the wall-clock budget at production scale] | N/A — reason
+**Module shape:**         [responsibility added/moved/deleted; interface delta; owner after slice; protected parents + expected production delta; exact shape-fence command/result] | N/A — route/design record no module-shape change
 **Files:**                 [exact paths to create or modify]
 **Estimate:**              [time estimate — a signal, not a gate]
 **Diff estimate:**         [changed lines: implementation + tests + fixtures]
@@ -96,21 +98,29 @@ Field rules:
 - **Named mutation** — the design row's mutation for each claim in this slice; [`checkpointed-build`](references/checkpointed-build.md) applies it to the new fence, confirms red, restores, and confirms green. A claim whose design row records `Named mutation: N/A — approved risk: no fence to mutate` records the same value here, covered by the same Approval entry as the fence.
 - **Complexity/production scale** — per new loop: asymptotic cost, production-scale input sizes, the resulting bound, and the slice's explicit maximum accepted cost with the rationale that sets it. The budget is plan-specific: [`checkpointed-build`](references/checkpointed-build.md) passes it when the measured cost is at or under the recorded maximum, so the recorded maximum and its rationale make pass/fail checkable without a shared default. Slices with no new loop: `N/A — reason`.
 - **Wall budget/phase** — classify every runtime phase the slice introduces. A phase is **always-on** when ordinary operation triggers it on every request, invocation, or background tick; it is **one-off** when it runs once per process, command, or discrete event. Always-on phases record a wall-clock budget at production scale with the rationale that sets it; one-off phases record `N/A — reason: one-off phase; no wall budget`.
+- **Module shape** — copy the applicable responsibility and interface change from the approved module ledger, name the final owner, and record every protected parent's expected production delta plus the shape-fence command and expected localized result. Numeric deltas are tripwires, not permission for pass-through splitting. Use `N/A — route/design record no module-shape change` only when `design.md` carries that exact branch.
 - **Commands and expected results** — the exact verification commands and their expected results as behavioral outcomes: what the output must be (the fixture's computed value, item-by-item agreement with the oracle, the fence going red under the named mutation and green once restored) — not runner-format text such as exact pass counts.
 
-Criterion: every slice records all thirteen fields, with `N/A — reason` in conditional cells.
+Criterion: every slice records all fourteen fields, with `N/A — reason` in conditional cells.
 
-### 4. Sum the integration budget; partition into PR increments
+### 4. Sum the integration and module-shape budgets; partition into PR increments
 
+- When module shape applies, read [module shape](references/module-shape.md) and build the module growth ledger before summing the diff:
+
+| Module | Baseline production lines | Projected final lines | Responsibility change | Interface change | Protected-parent rule |
+|---|---:|---:|---|---|---|
+| `<path>` | `<count>` | `<range>` | `<add/move/delete>` | `<entry points/invariants>` | `<rule or N/A>` |
+
+  Every module touched by a slice appears once. Projection ranges carry rationale and act as drift tripwires; they are not universal limits or evidence of depth. A predicted second responsibility cluster returns to design instead of being hidden by a larger range. When module shape does not apply, record `Module growth ledger: N/A — route/design record no module-shape change`.
 - Sum the slice Diff estimates.
 - Add a documented churn margin: state the margin and why it is what it is. Plans drift upward.
 - If the sum plus the margin exceeds 4,000 changed lines — exact, not approximate — partition the slices into independently mergeable PR increments in dependency order. Each increment verifies without the increments after it (verification seams: types plus committed-capture fixtures verify alone; converters verify against fixtures; wiring verifies against the app). If the spec recorded delivery increments, the partition follows them; a conflict between spec increments and verification seams means one of them is wrong — reconcile before saving the plan.
 - If the sum plus the margin is at or below 4,000, the plan has a single increment holding all slices.
 - Every slice records its PR increment; every increment lists its slices, its mergeable definition, and what verifies it without the later increments. When an increment's mergeability is described against an upstream branch, discover the repository's default/upstream branch per the contract — never hard-code one.
 
-The projection is a budget; the actual cumulative diff is enforced by [`checkpointed-build`](references/checkpointed-build.md) per the contract's single-owner rules. This step only partitions the projection.
+The projection is a budget; the actual cumulative diff and module shape are enforced by [`checkpointed-build`](references/checkpointed-build.md) per the contract's single-owner rules. This step only partitions the projection and records shape tripwires.
 
-Criterion: the partition arithmetic is recorded (sum, margin, total), every slice names its increment, and every increment has a mergeable definition.
+Criterion: the module growth ledger is complete or carries its evidence-backed `N/A`; partition arithmetic is recorded (sum, margin, total); every slice names its increment; and every increment has a mergeable definition.
 
 ### 5. Apply the tracker taxonomy
 
@@ -123,20 +133,21 @@ Criterion: every deferral phrase in plan.md is classified; every intended-future
 Before saving `plan.md`, run this checkable list:
 
 1. Every design row is assigned to exactly one slice; every slice's Claim IDs exist in the design table; every `PENDING` falsifier is discharged by the slice implementing its claim.
-2. Every slice has all thirteen mandatory fields, with `N/A — reason` in conditional cells.
+2. Every slice has all fourteen mandatory fields, with `N/A — reason` in conditional cells.
 3. Every claim's fence is created in the slice implementing it; every new fence carries its named mutation from the design; every fence-less claim copies `Regression fence: N/A — approved risk: <reason>` and records `Named mutation: N/A — approved risk: no fence to mutate`.
 4. Every new loop states its complexity, production-scale cost, and explicit maximum accepted cost with rationale; every always-on phase has a wall budget with rationale.
-5. The partition rule was applied with a documented churn margin; every slice names its PR increment; every increment has a mergeable definition.
-6. The tracker taxonomy is applied.
-7. The plan declares no slice complete — completion is [`checkpointed-build`](references/checkpointed-build.md)'s to judge.
+5. The Module shape field and growth ledger cover every touched module and protected parent, or both cite the route/design `N/A`; no slice crosses an approved seam with unrelated responsibilities.
+6. The partition rule was applied with a documented churn margin; every slice names its PR increment; every increment has a mergeable definition.
+7. The tracker taxonomy is applied.
+8. The plan declares no slice complete — completion is [`checkpointed-build`](references/checkpointed-build.md)'s to judge.
 
-Criterion: all seven hold. A failed check means the plan is incomplete; do not save it.
+Criterion: all eight hold. A failed check means the plan is incomplete; do not save it.
 
 ### 7. Write plan.md
 
-`.<change-slug>/plan.md` contains: the partition arithmetic (diff sums, churn margin, total, increments); one section per slice with the step-3 template filled; the self-review result.
+`.<change-slug>/plan.md` contains: the module growth ledger or evidence-backed `N/A`; the partition arithmetic (diff sums, churn margin, total, increments); one section per slice with the step-3 template filled; and the self-review result.
 
-Criterion: `plan.md` has one section per slice, every field filled, the arithmetic recorded, and the self-review list checked.
+Criterion: `plan.md` has one section per slice, every field filled, the applicable module growth ledger recorded, the arithmetic recorded, and the self-review list checked.
 
 ## Hand-off
 
@@ -147,6 +158,7 @@ Criterion: `plan.md` has one section per slice, every field filled, the arithmet
 `.<change-slug>/plan.md` with:
 
 - one section per slice, every mandatory field filled, conditional fields as `N/A — reason`;
+- the module growth ledger, or the route/design-backed `N/A`;
 - the partition arithmetic — summed diff estimates, documented churn margin, total, and every PR increment with its mergeable definition;
 - the self-review result.
 
