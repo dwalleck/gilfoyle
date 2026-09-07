@@ -1,7 +1,7 @@
 # Publish durable evidence references under one scoped authorization
 
 Status: ready-for-agent
-State: open
+State: closed
 Owning project/module: Portable Gilfoyle checkpoint wording and managed publication workflow
 Feasibility: skill (portable Gilfoyle checkpoint wording plus managed publication skills; not OMP core.)
 User stories covered: 24, 25, 33
@@ -26,13 +26,19 @@ This slice owns proof references, authorization consumption, and record survival
 
 ## Acceptance criteria
 
-- [ ] A repair/publication cycle maintains one authoritative claim-to-source/input/environment-to-result record; plan, review, commit, and publication summaries reference it instead of independently rewriting its changing contents.
-- [ ] Required evidence and tracker references survive the chosen rebase/restack operation and remain accessible to the intended audience. Do not publish private transcript paths or credentials as if they were shared evidence.
-- [ ] One explicit authorization names the stack and tracker records. Routine steps within unchanged approved conditions do not repeatedly ask for the same permission.
-- [ ] Changed scope, target, behavior, or risk requires renewed authorization; wrong-head status and unmet required acceptance prevent publication. Unrelated tracker records and parent issues remain unchanged.
-- [ ] Demonstrate a bounded authorized publication scenario and an out-of-scope rejection using a safe test target or suitable high-level harness. Existing configuration/permission tests alone do not prove this behavior.
-- [ ] Retain the existing bounded-repair policy, evidence validity, conditional N/A fields, initial design approval, and 4,000-line partition rule. Measure independent narrative edits, confirmation count, and correction addenda without treating all documentation as waste.
+- [x] A repair/publication cycle maintains one authoritative claim-to-source/input/environment-to-result record; plan, review, commit, and publication summaries reference it instead of independently rewriting its changing contents. (CONTRACT.md `Evidence record` definition; checkpointed-build caller-list single-homed.)
+- [x] Required evidence and tracker references survive the chosen rebase/restack operation and remain accessible to the intended audience. Do not publish private transcript paths or credentials as if they were shared evidence. (checkpointed-build §8; landing skill post-rebase check; demonstrated — see [ac5-demonstration](../ac5-demonstration.md).)
+- [x] One explicit authorization names the stack and tracker records. Routine steps within unchanged approved conditions do not repeatedly ask for the same permission. (CONTRACT.md `Scoped shipping authorization`; 0 re-asks in the authorized demonstration run.)
+- [x] Changed scope, target, behavior, or risk requires renewed authorization; wrong-head status and unmet required acceptance prevent publication. Unrelated tracker records and parent issues remain unchanged. (Out-of-scope run: 1 targeted renewal request, 03-gamma withheld; exact-head SHA pinned in lease and merge request.)
+- [x] Demonstrate a bounded authorized publication scenario and an out-of-scope rejection using a safe test target or suitable high-level harness. Existing configuration/permission tests alone do not prove this behavior. (Local git fixture + logging `gh` shim; three subagent runs including pre-change baseline; see [ac5-demonstration](../ac5-demonstration.md).)
+- [x] Retain the existing bounded-repair policy, evidence validity, conditional N/A fields, initial design approval, and 4,000-line partition rule. Measure independent narrative edits, confirmation count, and correction addenda without treating all documentation as waste. (Policy anchors verified present; measurements recorded in the demonstration note.)
 
 ## Blocked by
 
 None - can start immediately, subject to the pilot-first scheduling rule above.
+
+## Comments
+
+**2026-09-07 — completed.** Wording changes and demonstration evidence: [`ac5-demonstration.md`](../ac5-demonstration.md).
+
+Outcome: **one owning evidence record and one scoped shipping authorization are now the single sources.** `CONTRACT.md` defines the `Evidence record` (summaries reference it, never copy it) and `Scoped shipping authorization` (routine steps consume it without re-asking; changed scope/target/behavior/risk renews; wrong-head or unmet acceptance blocks). `checkpointed-build.md` single-homes the caller list in the owning slice/repair record and attaches evidence/tracker references to the behavior-owning commit so they survive restack. The three managed publication skills consume the authorization and verify reference survival. Demonstrated on a local fixture with three subagent runs: the authorized run completed with zero re-asks and trailers verified on the rebased head; the out-of-scope run produced exactly one targeted renewal request and left the unnamed record untouched; the pre-change baseline performed no reference validation at all. Limitations recorded in the demonstration note: canned `gh` shim (no real CI/merge-async), fixture records not atomically inside each behavior commit, and no baseline re-ask contrast because both arms received an explicit written instruction. Merge-adapter consolidation (issue 12) and compact progress presentation (issue 13) were left to their owning slices.
