@@ -45,9 +45,9 @@ checkpointed-build  →  per-slice: implement, recheck oracle, recheck budget
                                    →  per-finding: verify, evaluate, accept / modify / reject
 ```
 
-The loop has five mandatory gates that reach *outside the document*. Spec vs requester. Probe vs oracle. Falsifier vs claim. Budget vs scale. Per-slice oracle recheck. Each gate is a chance to catch a wrong assumption while it's still cheap. The first gate reaches outside the *requester's head*; the rest reach outside the *design document*.
+The selected route determines which gates apply: requester decisions, empirical premise evidence, falsifiable design, budgeted planning, and implementation verification. Each checks an obligation outside the document. The [workflow contract](skills/gilfoyle/references/CONTRACT.md#evidence-validity) defines when prior evidence remains valid and when changed assumptions require fresh verification.
 
-`assessing-review-feedback` applies the same epistemic discipline to *incoming* review comments. A reviewer's finding is a hypothesis with two parts (the bug claim and the fix claim); the skill demands both be verified per finding before applying changes.
+`assessing-review-feedback` applies the same discipline to incoming comments: verify the bug claim and evaluate the fix separately. Repairs within approved claims use a [compact repair record](skills/gilfoyle/references/assessing-review-feedback.md#compact-repair-record) and scoped verification; changed approved decisions return for approval, and changed planning inputs receive affected-only updates.
 
 ## The orchestrator and stages
 
@@ -56,18 +56,18 @@ The loop has five mandatory gates that reach *outside the document*. Spec vs req
 | Stage | Replaces | Purpose |
 |---|---|---|
 | `interrogated-spec` | (nothing — this is new) | Grill the requester one question at a time until every vague noun is resolved, every success criterion is measurable, every edge has a decision, and the requester has signed off in their own words. |
-| `prove-it-prototype` | (nothing — this is new) | Build a probe that runs against the real system, define an independent oracle, refuse to proceed until they agree. |
+| `prove-it-prototype` | (nothing — this is new) | Establish missing or invalidated empirical premises with a real-system probe and independent oracle; retain valid premise evidence. |
 | `falsifiable-design` | brainstorming | Produce a design where every claim is paired with an experiment that would prove it wrong; cheapest falsifier runs before approval. |
-| `budgeted-plan` | writing-plans | Decompose into slices, each with mandatory complexity budget, scale budget, and stress fixture. |
-| `checkpointed-build` | executing-plans | Execute slices one at a time, run the oracle after each, stop on drift. |
-| `tdd-scoped` | test-driven-development | Keep TDD doing what it's good at (unit correctness); add BUDGET and ORACLE gates between GREEN and REFACTOR. |
-| `assessing-review-feedback` | (nothing — this is new) | Treat each PR review finding as a hypothesis with two parts (bug claim + fix claim). Verify both. Decide per finding whether to accept, modify, or reject. Decision log mandatory. |
+| `budgeted-plan` | writing-plans | Decompose new work into independently verifiable slices with applicable budgets and fixtures; amend only affected planning inputs on review re-entry. |
+| `checkpointed-build` | executing-plans | Verify slices and bounded repairs, then establish assembled quality, platform, and integration proof. |
+| `tdd-scoped` | test-driven-development | Prove changed behavior red/green and check changed complexity locally; checkpoints own the broader evidence. |
+| `assessing-review-feedback` | (nothing — this is new) | Verify and decide each finding; group approved-contract repairs atomically in the existing decision surface. |
 
 ## The rules, condensed
 
-0. **No probe without a pinned spec.** Before you probe the system, pin the request. Every vague noun the requester uses ("user", "fast", "soon", "the inbox") is three decisions in a trench coat. Extract each decision before you write a probe — otherwise the probe answers the wrong question.
+0. **Pin unresolved behavior.** Resolve observable behavior before probing or designing. Reuse explicit behavior and approved decisions rather than interrogating them again.
 
-1. **No design without a probe.** A probe is the smallest possible program that produces the proposed feature's output against the real system. If you can't build one, you don't understand the feature well enough to design it.
+1. **Empirical design needs valid premise evidence.** Probe an unverified or invalidated premise before relying on it. Structural and Local routes do not manufacture empirical work.
 
 2. **No probe without an oracle.** An oracle is an independent computation of the same answer using a different mechanism. If the probe matches its own logic, you've proven nothing.
 
@@ -79,13 +79,13 @@ The loop has five mandatory gates that reach *outside the document*. Spec vs req
 
 6. **No precondition without an assertion.** "Callers must X" in a doc comment without `debug_assert!(X)` in the code is a lie.
 
-7. **No slice without a checkpoint.** After every slice, the binary is run against the prove-it-prototype oracle. Drift is a stop condition.
+7. **Every slice or repair has a checkpoint.** Verify affected behavior against its applicable obligations, retain valid evidence by reference, and stop on unresolved failures. Writer-local proof does not replace assembled integration.
 
 8. **No "fix it later."** Drift caught at slice N is cheap. Drift caught at slice N+8 is the entire feature. We stop at slice N.
 
 9. **No ceremony for ceremony's sake.** TDD is a tool. We use it for what it's good at. We do not pretend it's a substitute for verification against reality.
 
-10. **We're done when it's right.** Not when the tests pass. Not when the plan's checkboxes are ticked. When the binary, run against the real system, at production scale, agrees with the oracle. Not before.
+10. **Completion requires current evidence.** The final assembled state satisfies every applicable behavioral, quality, platform, and integration obligation, with independent structural review when required. Historical green results count only when they still prove that state.
 
 11. **Dogfood the static-analysis tools available to you.** Before changing a function's signature, name, or semantics: list its callers with whatever impact-analysis tool you have (project-local code-intelligence binary, IDE find-usages, `grep`). The list bounds the change's blast radius. Treat the tool's output as a hint generator, not an oracle — verify with `grep` when stakes are high.
 

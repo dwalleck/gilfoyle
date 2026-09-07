@@ -6,21 +6,29 @@ Stopping is the most important step. Drift caught at slice N is cheap; drift cau
 
 ## When this stage runs
 
-After [`budgeted-plan`](references/budgeted-plan.md) has produced a plan with all gates passing — not before. Without a plan you are improvising; we do not improvise. Before consuming `plan.md`, read [workflow contract](references/CONTRACT.md): it owns the gate-state vocabulary (`PASS` / `FAIL` / `N/A — reason`), the slice and independent-oracle definitions, branch discovery, the review-size tripwire, and tracker discovery used here.
+After [`budgeted-plan`](references/budgeted-plan.md) has produced a plan with all gates passing — not before. Before consuming `plan.md`, read [workflow contract](references/CONTRACT.md): it owns the gate states, evidence validity, approval semantics, slice and independent-oracle definitions, branch discovery, review-size tripwire, and tracker discovery used here. Initial slices retain the full entry and critique requirements below; approved-contract review repairs use the bounded entry.
+
+### Bounded repair entry
+
+For a review finding whose fix is determined by the approved contract, consume the covering claims in `design.md`, owning slice in `plan.md`, and **Compact repair record** from [`assessing-review-feedback`](references/assessing-review-feedback.md), even if the owning slice is already committed. That stage owns the record's format and incorporates this stage's returned gate judgment.
+
+Inherit unchanged approved plan fields by reference; critique only the affected inherited obligations. Perform the relevant impact analysis, helper search, implementation/TDD, symmetry audit, and proof steps below for the repair, not a fresh 14-field slice or a replay of the whole slice cycle. Reconcile all nine gate states using fresh or valid retained evidence, then apply the relevant sweep, atomic commit, drift, and size obligations to the actual change.
+
+No covering claim, or a change to approved behavior, ownership, interface, architecture, or risk, returns to the owning design/spec stage for approval and then `budgeted-plan` for the affected plan update. Changed plan scope, budget, or partition inputs go to the plan owner for an affected-only update. Technical proof repairs follow the contract's approval semantics; bounded repair does not waive changed obligations or initial approval.
 
 ## The gate — stated once
 
-Slice completion is this stage's job, and this is the whole gate. One checkpoint per *completed* slice — never per unit-test cycle, never batched across slices. Every item is recorded as `PASS`, `FAIL`, or `N/A — reason` per [workflow contract](references/CONTRACT.md); a conditional item that does not apply is recorded as `N/A` with the plan, design, or route fact that makes it so.
+Slice completion is this stage's job, and this is the whole gate. One checkpoint per *completed* slice or atomic bounded repair — never per unit-test cycle, never batched across slices. Every item is recorded as `PASS`, `FAIL`, or `N/A — reason` per [workflow contract](references/CONTRACT.md); a conditional item that does not apply is recorded as `N/A` with the plan, design, or route fact that makes it so. Apply the contract's **Evidence validity** rule to every result: run new or invalidated proof and retain applicable conclusions with a prior-result reference and short applicability reason. `N/A` never substitutes for missing proof.
 
 1. **Affected unit tests** pass — or `N/A — reason` when the slice changes no executable behavior and `plan.md` records no affected tests.
-2. **PENDING falsifiers** assigned to this slice run and pass — or `N/A — reason` when no falsifier is pending here. `PENDING` is a lifecycle status, not a gate state, per [workflow contract](references/CONTRACT.md): it marks a falsifier awaiting discharge by a named owner and step.
+2. **Falsifiers** assigned to this slice pass: discharge `PENDING` falsifiers and rerun invalidated `PASS` falsifiers; retain still-valid `PASS` results — or `N/A — reason` when no falsifier applies here. `PENDING` is a lifecycle status, not a gate state, per [workflow contract](references/CONTRACT.md).
 3. **Stress fixture** produces the plan's expected outcome — or `N/A — reason` when the plan records no fixture for this slice.
 4. **Changed implementation vs independent oracle** agree on the plan's input.
 5. **Approved module shape** holds: actual responsibility and interface ownership, dependency direction, protected-parent deltas, and paths match `design.md` and `plan.md`; the module-shape fence passes — or `N/A — route and design record no module-shape change`.
 6. **Production-scale budget** holds for every applicable loop and always-on phase, measured against the plan — with a separate `N/A — reason` for each budget class the plan marks inapplicable.
 7. **Regression fence** green — or `N/A — approved risk: <reason>` when the design records that exact value in the claim's Regression fence cell and the Approval section.
-8. **Named mutation** red, for every new fence this slice adds — or `N/A — approved risk: no fence to mutate` when the plan records that exact value.
-9. **Fence restored** green — or `N/A — approved risk: no fence to restore` when item 8 carries `N/A — approved risk: no fence to mutate`.
+8. **Named mutation** red: new or changed fences, or changed mutation applicability, require fresh proof; otherwise retain valid red evidence — or `N/A — approved risk: no fence to mutate` when the plan records that exact value.
+9. **Fence restored** green after required mutation runs, or valid retained restoration evidence — or `N/A — approved risk: no fence to restore` when item 8 carries `N/A — approved risk: no fence to mutate`.
 
 Item 2 is the design's one-shot falsifier experiment; items 7-9 are its permanent fence. A row can discharge its falsifier here and still owe its fence. When the pending falsifier and Regression fence name the same deterministic test, run it once and record that result for both items 2 and 7. When the module-shape fence is also a claim's Regression fence, run it once and record that result for both items 5 and 7.
 
@@ -52,7 +60,7 @@ Tooling, in preference order:
 
 Caveats: the tool's coverage is bounded by its own correctness (when you are modifying the resolver, the resolver's caller-analysis is what you are fixing); cross-crate edges, generated callsites, and re-exports may be missed or phantom-generated. An empty caller list is suspicious — dead code to delete, a stale index to refresh, or an exported/re-exported symbol whose consumers need a second lookup.
 
-**Completion:** caller list (path + line) recorded in the slice's commit message; or an explicit note that the function is brand-new and has no callers.
+**Completion:** caller list (path + line) recorded in the owning slice or repair record — or an explicit note there that the function is brand-new and has no callers. The commit references the record (step 8); it does not carry the list itself.
 
 ### 2. Helper search — before implementing
 
@@ -82,18 +90,18 @@ Asymmetry is allowed. Unintentional asymmetry is the bug class this audit catche
 
 **Completion:** every parallel-path question above is answered, or a written divergence justification exists.
 
-### 5. Run the gate — once, after the slice
+### 5. Resolve the gate — once, after the slice or repair
 
-Run the nine items from **The gate** in order and record each state as `PASS`, `FAIL`, or `N/A — reason`. The mechanics:
+Resolve the nine items from **The gate** in order and record each state as `PASS`, `FAIL`, or `N/A — reason`. The commands below describe fresh proof; reuse qualifying results under **Evidence validity** instead of rerunning them. After any edit, rerun invalidated checks, including checks invalidated by a proof-fixture or cleanup change; broaden scope when dependencies are uncertain. Focus writer-local checks on the changed path and inherited obligations; assembled quality, platform, and cross-slice proof belongs to the final integration check.
 
 - **Affected unit tests.** Run the tests covering the slice's changed executable behavior. They must pass. A test rewritten to accept the bug is not a pass. If the slice changes no executable behavior and the plan names no affected tests, record the plan-backed `N/A — reason`.
-- **PENDING falsifiers.** For every falsifier the plan assigns to this slice whose design Status is `PENDING` — the discharge owner and step named in design/plan per [workflow contract](references/CONTRACT.md) (`PENDING` is a lifecycle status, not a gate state) — run the falsifier with the exact command the plan's Commands and expected results field records. Record `PASS` or `FAIL`. A `FAIL` blocks the slice: the claim is falsified, and only a design revision (per the contract's approval semantics) re-opens it. Rows already `PASS` need no run; when no falsifier is pending here, record `N/A — reason`. Distinct from items 7-9: this runs the one-shot falsifier; those run its permanent fence.
+- **Falsifiers.** Run each assigned `PENDING` falsifier and each invalidated `PASS` falsifier with the plan's recorded command. Retain a still-valid `PASS` with its result reference and applicability reason; use `N/A — reason` only when no falsifier applies here. A `FAIL` blocks the slice: classify and resolve it under step 6 and the contract's approval semantics. Distinct from items 7-9: this checks the experiment's conclusion; those establish current regression coverage and defect sensitivity.
 - **Stress fixture.** Run the plan's fixture; compare actual to expected. Exact match required — or record the plan's `N/A — reason` when the plan records no fixture for this slice.
 - **Changed implementation vs oracle.** Run the slice's changed implementation on the input recorded in the plan, then run the plan's independent oracle on that same input and compare their observable outputs item by item. On an Empirical route, include the workspace and evidence oracle established by [`prove-it-prototype`](references/prove-it-prototype.md); on a Structural route, use the design row's oracle and plan-defined input. The subject is the changed implementation, never the probe. They must agree.
 - **Module shape.** When the plan's Module shape field applies, read [module shape](references/module-shape.md), compare the actual production tree and diff with the approved module ledger and growth ledger, and run the exact shape-fence command. Check responsibility owners, interfaces, dependency direction, protected parents, required/forbidden paths, and numeric tripwires. A numeric overrun with unchanged placement returns to `budgeted-plan`; a new responsibility, wider interface, different seam, or pass-through split returns to `falsifiable-design` and requester approval. Use the exact route/design-backed `N/A` only when module shape does not apply.
-- **Budget.** For every loop the slice introduced, confirm the production-scale cost against the plan's loop budget. For every always-on phase, measure wall-clock against the plan's wall budget. Record each applicable result separately; use the corresponding plan-backed `N/A — reason` only for a budget class the slice does not introduce. Measure with `time`, `hyperfine`, or a benchmark harness — eyeballing does not count.
-- **Fence.** Run the regression fence this slice created for its claim — the named test from the plan's Regression fence field (the design's Falsification table names it). If the design records `N/A — approved risk: <reason>` for the claim's fence and records that acceptance in the Approval section, carry that exact value into the gate record; no run is owed.
-- **Mutation.** For every NEW fence this slice adds: apply the exact buggy implementation the design's Named mutation field records for it, run the fence — it must go red — then restore the code and confirm the fence is green again. A fence that has only ever been seen green is not evidence. If the fence stays green under its own mutation, the fixture is blind to the bug: change the fixture, not the assertion, and do not skip the mutation because "the code is obviously right." A mutation that will not compile, that requires an action the design forbids, or that leaves the fence's observable unchanged is not applicable as written: correct it against [`falsifiable-design`](references/falsifiable-design.md)'s Named mutation criteria — keeping the claim, the oracle, and the intended buggy property fixed — and record the correction before rerunning. When the plan records `Named mutation: N/A — approved risk: no fence to mutate`, carry that exact value into item 8 and record `N/A — approved risk: no fence to restore` for item 9.
+- **Budget.** For every new or changed loop or always-on phase, establish that the applicable production-scale and wall-clock budgets still hold. Rerun measurements invalidated by the change; retain applicable measurements for unchanged paths under Evidence validity. Record each budget class separately, using plan-backed `N/A — reason` only when that class is inapplicable. Measure with `time`, `hyperfine`, or a benchmark harness — eyeballing does not count.
+- **Fence.** Establish green regression evidence for the claim's named fence on the changed implementation under **Evidence validity**, whether the fence was created here or inherited. If the design records `N/A — approved risk: <reason>` for the claim's fence and records that acceptance in the Approval section, carry that exact value into the gate record; no run is owed.
+- **Mutation.** For every new or changed fence, or changed mutation applicability, apply the exact buggy implementation from the design's Named mutation field, observe the fence go red, restore the code, and observe green. Retain still-valid mutation/restoration evidence otherwise. A fence seen only green has not demonstrated defect detection. If it stays green under its mutation, repair the blind fixture without weakening the asserted behavior. A mutation that cannot compile, violates the design, or leaves the observable unchanged needs correction under [`falsifiable-design`](references/falsifiable-design.md)'s criteria and the contract's approval semantics before rerunning. Supply technical proof corrections to the owning stage for recording; changes to approved decisions require user approval. Carry the plan's exact approved-risk `N/A` values into items 8 and 9 when applicable.
 
 **Completion:** all nine gate items recorded — each `PASS`, `FAIL`, or `N/A — reason`.
 
@@ -103,12 +111,12 @@ Run the nine items from **The gate** in order and record each state as `PASS`, `
 
 Classify the failure:
 
-- **Implementation or tool failure** whose correct fix the contract already determines — diagnose and repair it yourself. Rerun the failed gate. Stay on this slice.
-- **Specification, scope, architecture, or explicit risk acceptance** — surface to the user. Only they decide these.
+- **Implementation or tool failure** whose correct fix the contract already determines — diagnose and repair it yourself. Recheck failed and newly invalidated evidence; retain applicable conclusions. Stay on this slice, or use the bounded entry for review repair.
+- **Changed approved specification, scope, architecture, or explicit risk acceptance** — return to the owning artifact and user approval under the contract. Plan-only scope/budget/partition updates go to the plan owner.
 
 If the failure matches a known issue in the tracker, record the relationship after the bounded tracker lookup defined in [workflow contract](references/CONTRACT.md). The issue explains the failure; the slice still does not ship with the gate failed. Either absorb the fix into this slice or surface the decision to the user.
 
-A user risk decision does not waive the failed gate: it is recorded by revising the owning artifact — `spec.md`, `design.md`, or `plan.md`, per the contract's single-owner rules — for example as an approved `N/A — reason` for the gate. The gate then reruns against the revised artifact. A remaining `FAIL` never ships.
+A user risk decision does not waive the failed gate: it is recorded by revising the owning artifact — `spec.md`, `design.md`, or `plan.md`, per the contract's single-owner rules — for example as an approved `N/A — reason` for the gate. Reconcile the gate against the revised artifact, rerunning invalidated checks and retaining valid evidence. A remaining `FAIL` never ships.
 
 Never weaken a gate to green: no test rewritten to pass, no assertion relaxed, no mutation deleted because the code looks right.
 
@@ -121,11 +129,11 @@ Scan every file this slice modified — plus the files it depends on — for:
 - **Misleading names** — if this slice changed a function's semantics and the name no longer describes the behavior, rename via the step 1 impact analysis (symbol-aware first, `grep` as safety net) and update every callsite in this same commit.
 - **Tracker references** — classify every "deferred to", "tracked at", "out of scope", "follow-up" phrase in code or the commit message per [workflow contract](references/CONTRACT.md)'s tracker taxonomy: a **permanent non-goal** records its rationale where the phrase sits — no tracker issue; **intended future work** (including trigger-conditioned phrases) cites a verified tracker ID — discover the repository's tracker per the contract, use its native command, and if the ID does not exist, the issue does not cover the deferral, or the phrase has no ID, file the issue *now* and update the reference. Anonymous TODOs and phantom tracker IDs rot.
 
-**Completion:** the sweep found nothing, or everything it found is fixed in this commit.
+**Completion:** the sweep found nothing, or everything it found is fixed in this commit and any evidence those fixes invalidated has been reverified.
 
 ### 8. Commit
 
-One commit per slice. The message names the design claim this slice implements and carries the step records: caller list (step 1), deviations from pre-typed code, mutation results (step 5), fence gaps.
+One commit per slice or atomic bounded repair. The message names the design claim and references the owning slice/repair record: caller analysis, deviations, gate and mutation results, and fence gaps. Unchanged inherited records remain references. Required evidence and tracker references travel with this behavior-owning commit, so a later rebase or restack keeps them attached to the change they prove; an integration merge commit alone does not carry them. Cite shared, audience-accessible evidence; private transcript paths and credentials are not shared proof.
 
 ### 9. Drift check — after commit, before the next slice
 
@@ -134,7 +142,7 @@ Per [workflow contract](references/CONTRACT.md) branch discovery, fetch the defa
 - Flag: upstream changed a file this branch also changed since the last check (conflict risk); this slice introduced divergence on generated or structured files (append-only JSONL, lockfiles, schema dumps); a file this slice did not touch shows large new divergence.
 - Do **not** flag lockfile/JSONL changes the plan records as intentional branch changes — they are expected, not drift, and are not re-flagged every slice.
 
-If anything is flagged: merge or rebase upstream before starting the next slice. Prefer a merge commit (preserves slice history) over a rebase (rewrites it, breaking pushed hashes other reviewers may be reading). After merging or rebasing, rerun the current slice's gate — the nine items — before advancing: upstream movement can change what the slice's checks observe.
+If anything is flagged: merge or rebase upstream before starting the next slice. Prefer a merge commit (preserves slice history) over a rebase (rewrites it, breaking pushed hashes other reviewers may be reading). After merging or rebasing, reconcile all nine gate states under **Evidence validity** before advancing: rerun checks invalidated by upstream movement and retain applicable results; broaden checks if the affected scope is uncertain.
 
 ### 10. Size tripwire — after commit, before the next slice
 
@@ -147,24 +155,28 @@ Cumulative changed lines since the upstream merge-base, checked after every comm
 
 ## Final integration check
 
-After every slice has passed, run the assembled implementation against every applicable oracle — the evidence oracle and every design row's oracle — then run every falsifier and every regression fence from the design's Falsification table. Compare each implementation/oracle pair on the same input; every comparison and check must pass.
+After every slice has passed, establish proof for the **assembled implementation**, not just individual writer worktrees. The integration owner (Main when work is delegated) accounts for every applicable implementation/oracle comparison, design falsifier, regression fence, repository quality check, target-platform check, and cross-slice interaction. Run missing or invalidated checks on the assembled state; reuse prior results only when **Evidence validity** establishes that they still prove that state. Compare implementation/oracle outputs on the same input. All applicable results must be `PASS`; retain explicit contract-backed conditional `N/A` fields.
 
-The three are related but distinct: the **oracle** independently computes the implementation's observable answer; the **falsifier** is the experiment that would prove a claim false, often one-shot; the **regression fence** is the permanent form of the falsifier that catches future regressions. If the fence is the same artifact as the falsifier (both deterministic tests), run it once and count it as both.
+A shared deterministic test may supply both falsifier and regression results. Use the contract's **Evidence validity** distinctions to decide which experiments need fresh execution; final integration alone does not invalidate an empirical premise or mutation proof.
 
-When module shape applies, also execute [module shape](references/module-shape.md)'s **Final design-conformance review** in a separate reviewer or fresh process/context that did not receive the implementation transcript, plan rationale, or approved ledger. Record the isolation method and reconstructed module/interface/responsibility map before revealing `design.md`; then record every mismatch, disposition, and final comparison result. Fix every mismatch or revise and reapprove the design. Same-context implementer self-attestation does not satisfy the review.
+When module shape applies, satisfy [module shape](references/module-shape.md)'s **Final design-conformance review**, including its isolated-review and evidence-retention criteria. This is the authoritative review record for assembled structural conformance.
 
-If any behavioral check or module-ledger comparison fails, the slice chain regressed: bisect to the slice, stop, surface.
+Writer-local receipts alone do not prove assembled quality, platform behavior, or integration. A task instruction banning writer validation transfers the missing proof to Main; it cannot authorize a verified gate or completion. Missing proof blocks completion until the integration owner supplies it.
+
+If any behavioral check or module-ledger comparison fails, locate the responsible slice or interaction, stop, and resolve it under step 6. Final status is verified only after every applicable obligation has fresh or valid retained proof.
 
 ## Red flags
 
 - "The oracle drifted by one item; I'll fix it next slice." No. Drift across slices is silent corruption. Stop now.
 - "I'll batch the next three slices and run the gate at the end." No. One checkpoint per completed slice. Batching is how drift becomes invisible.
-- "The known issue explains the failure, so we ship." No. It explains; it does not waive. The gate stays failed until the failure is fixed or the owning artifact is revised and the gate reruns.
-- "Unit tests pass, so the implementation-vs-oracle gate can wait." No. The gate runs every slice. Wait is not a gate state.
+- "The known issue explains the failure, so we ship." No. It explains; it does not waive. Resolve the failed obligation and reverify invalidated evidence against the owning artifact.
+- "Unit tests pass, so the implementation-vs-oracle gate can wait." No. Every checkpoint needs all nine states resolved with fresh or valid retained evidence. Wait is not a gate state.
 - "The fence stayed green under its mutation; the code is obviously right." No. The fixture is blind to the bug. Change the fixture.
 - "The plan said this loop, so I wrote this loop even though I see a better one." Wrong. The plan is advisory; the contract is claim, fixture, oracle, budget.
 - "I cited a tracker ID without checking it exists." Phantom references and silent deferrals fail the same way: future contributors cannot find the deferred work. Verify with the repository's tracker command before writing the reference, not after.
 - "I grep'd the source for a helper and wrote it from scratch." Did you grep the manifests? An already-imported dependency's API is functionally part of the codebase's vocabulary. Hand-rolling what an imported crate already provides is the same class of duplication as hand-rolling a function that exists in `db/files.rs`.
+- "All writers reported green, so integration is verified." Their local results need assembled-state applicability; Main supplies missing quality, platform, and cross-slice proof.
+- "The falsifier passed before, so changed inputs do not matter." Reuse requires evidence validity, not a historical green label.
 
 ## What this stage is not
 
@@ -172,4 +184,4 @@ This is not "follow the plan." This is "advance the design hypothesis by one sli
 
 ## Output
 
-For each slice: one commit, with all nine gate items attached (every item `PASS` or `N/A — reason`; no `FAIL`). After the final slice: a clean run of every implementation/oracle comparison, falsifier, and regression fence against the assembled implementation, plus the fresh-context design-conformance record and `PASS` comparison when module shape applies. If any of that is missing, the stage did not finish. Finish it.
+For each slice: one commit and all nine gate states returned to the owning slice-record author. For each bounded repair: one atomic commit and those states returned to `assessing-review-feedback` for incorporation in the compact repair record, with inherited plan references instead of a new slice template. Every item is `PASS` or justified `N/A — reason`; no `FAIL` or missing proof. After the final slice or repair: verified assembled quality, applicable platform and cross-slice checks, implementation/oracle comparisons, falsifiers, and regression fences, plus the valid isolated design-conformance record when module shape applies. Fresh and retained results satisfy **Evidence validity**; writer receipts or validation prohibitions alone do not complete the stage.

@@ -14,7 +14,7 @@ The reviewer can be right about the bug and wrong about the fix, or right about 
 
 ## Contract
 
-Read [workflow contract](references/CONTRACT.md) before producing or consuming any workflow artifact. It is the single source of truth for the definitions this stage applies — gate states, slice, checkpoint ownership, tracker taxonomy, artifact ownership, and the canonical `.<change-slug>/` directory. Point to it; never restate it.
+Read [workflow contract](references/CONTRACT.md) before producing or consuming any workflow artifact. It is the single source of truth for the definitions this stage applies — gate states, slice, checkpoint ownership, Evidence validity, Approval semantics, tracker taxonomy, artifact ownership, and the canonical `.<change-slug>/` directory. Point to it; never restate it.
 
 ## Process
 
@@ -64,20 +64,23 @@ Tracker taxonomy, per the contract:
 
 ### 5. Apply changes through the verification gates
 
-- **Active Gilfoyle workflow** — detected by `route.md` and `plan.md` both present in the canonical `.<change-slug>/` directory: every behavior-changing `Accept`/`Modify` fix becomes an atomic review-fix slice. Return to [`budgeted-plan`](references/budgeted-plan.md), the sole owner of `plan.md`: revise an uncommitted owning slice, or append a fully populated slice when the owning slice is already committed. Scope it to the root-cause fix and every finding it resolves. If the fix changes approved behavior, architecture, or design claims, return first to the owning stage — [`interrogated-spec`](references/interrogated-spec.md) for behavior or [`falsifiable-design`](references/falsifiable-design.md) for architecture/design — and re-record approval per the contract. Then read and execute [`checkpointed-build`](references/checkpointed-build.md) for that slice and run its checkpoint once. Run final integration when every plan slice is complete, not after each edit.
-- **Regression fence**: a `Verified` reproduction seeds the slice's fence but is not automatically one. Convert it into a permanent automated check — a committed test that goes red on the original bug and green on the fix — or carry a design-approved `N/A` risk in the slice instead.
+- **Active Gilfoyle workflow** — detected by `route.md` and `plan.md` both present in the canonical `.<change-slug>/` directory: group accepted behavior-changing or technical-proof findings by atomic root-cause repair and prepare the compact record below in the existing decision surface. Read the covering design claims and owning slices, not the whole design or plan.
+  - **Approved-contract repair:** when the implementation repair is covered by approved claims and preserves approved decisions, enter [`checkpointed-build`](references/checkpointed-build.md)'s bounded repair path directly, whether the owning slice is committed or not. Inherit unchanged approved plan fields by reference; no new fourteen-field slice or formal replanning is required. Technical proof repairs follow the contract's Approval semantics and are recorded by their artifact owner.
+  - **Changed contract or missing coverage:** no covering claim, or a change to approved behavior, ownership, interface, architecture, or risk, returns first to the owning stage — [`interrogated-spec`](references/interrogated-spec.md) for behavior or [`falsifiable-design`](references/falsifiable-design.md) for design — with approval handled by the contract's Approval semantics. Then [`budgeted-plan`](references/budgeted-plan.md) updates only the affected plan.
+  - **Changed plan inputs:** scope, budget, or partition inputs changing without a design change go directly to [`budgeted-plan`](references/budgeted-plan.md), the sole plan owner, for an affected-only update.
+- **Proof:** use the contract's Evidence validity to identify invalidated checks and retained conclusions. After each repair, rerun invalidated checks and retain applicable evidence by reference; broaden checks when applicability is uncertain. A `Verified` reproduction seeds a regression fence but is not automatically one: use an existing fence that detects the bug, add or repair a permanent automated fence, or carry the exact approved fence-risk `N/A`. Checkpointed-build exclusively judges the gate; this stage incorporates its returned result into the repair record it owns.
 - **Outside the workflow** (no `route.md` + `plan.md`): use the repository's normal reproduce → fix → focused-verification process.
-- Non-behavioral fixes (docs, comments, formatting) skip the checkpoint but still carry their row in the decision log.
+- Non-behavioral fixes (docs, comments, formatting) skip the checkpoint only when they leave required proof applicable under Evidence validity; they still carry their row in the decision log. Technical proof repairs use the workflow gate.
 - A fix that fails during implementation returns to step 3: decide again; never ship a fix you no longer believe in.
 
-**Completion:** every behavior-changing `Accept`/`Modify` fix passed its applicable verification gate — its workflow checkpoint, or the repository's focused verification — before commit; final integration passed after the last workflow slice.
+**Completion:** every behavior-changing `Accept`/`Modify` repair passed its applicable pre-commit gate — checkpointed-build's bounded repair or updated-slice checkpoint, or the repository's focused verification — with fresh or retained valid evidence. Final assembled quality, platform, and integration proof is mandatory after the last slice or repair; earlier integration conclusions survive only under Evidence validity.
 
 ### 6. Commit by atomic change
 
 - Group commits by atomic change (the contract's slice definition), not by finding: one commit per atomic change. Several findings sharing one atomic change land in one commit; one finding spanning several atomic changes is named in all of them.
 - Each commit message names the atomic change and lists **every finding ID it addresses** (e.g. `fix(parser): reject empty prefixes — F1, F3`).
 
-**Completion:** every `Accept`/`Modify` finding is addressed by commits whose messages list its ID, and every commit lists the finding IDs it addresses.
+**Completion:** every `Accept`/`Modify` finding is addressed by commits whose messages list its ID, every commit lists the finding IDs it addresses, and every behavior-changing repair passed step 5 before commit.
 
 ### 7. Decision log
 
@@ -95,7 +98,18 @@ The output is a decision log: a section in the PR description, a comment thread,
 - `fix` — the applied change for `Accept`/`Modify`, naming its atomic change; `N/A — <reason>` for `Reject`.
 - `note` — one-line rationale; permanent non-goals record the rationale justifying no tracker issue.
 
-**Completion criterion:** every finding from step 1 appears in exactly one row; every row has exactly one `evidence-state` value and one `decision` value from the closed sets; every `Verified`/`Refuted` row names its evidence; every tracked or deferred decision carries a verified issue ID; every permanent non-goal records its rationale; every behavior-changing fix's row names the verification gate it passed.
+### Compact repair record
+
+For an active workflow, maintain one record per atomic behavior-changing or technical-proof repair beside the finding rows in this same decision surface; create no separate repair artifact. Other non-behavioral fixes need only their finding rows. Prepare the repair's scope and expected results before applying it, then record actual results:
+
+- **Finding IDs and ownership:** all resolved finding IDs; covering design Claim IDs and owning `plan.md` slice references. Inherit unchanged approved fields from those references.
+- **Root-cause change and affected paths:** the atomic repair and exact production/proof paths it changes; any required approval or affected plan update reference.
+- **Commands and results:** exact affected checks, behavioral expected results, and observed results or evidence links.
+- **Evidence disposition:** invalidated evidence and replacement results; retained evidence references with applicability reasons under the contract's Evidence validity. Conditional non-applicable proof carries explicit `N/A — reason` (fence/mutation risk uses the exact approved values).
+
+[`checkpointed-build`](references/checkpointed-build.md) consumes this record and returns its checkpoint judgment to this stage for incorporation; this stage remains the decision surface's sole writer. Each finding's `fix` points to every repair addressing it; several findings may share one repair.
+
+**Completion criterion:** every finding from step 1 appears in exactly one row; every row has exactly one `evidence-state` value and one `decision` value from the closed sets; every `Verified`/`Refuted` row names its evidence; every tracked or deferred decision carries a verified issue ID; every permanent non-goal records its rationale; every active-workflow behavior-changing or technical-proof repair has its compact record and references the verification gate it passed.
 
 ## Hard gate
 
@@ -105,8 +119,8 @@ No behavior-changing fix is committed until:
 - [ ] No behavior-changing `Accept`/`Modify` rests on an `Unverified` claim.
 - [ ] Every `Verified`/`Refuted` row names its evidence; every `Unverified` row names what is missing.
 - [ ] Every tracked or deferred decision names a verified tracker issue ID; every permanent non-goal records its rationale.
-- [ ] The applicable pre-commit verification passed: the review-fix slice's workflow checkpoint, or the repository's focused verification.
-- [ ] Final integration passed when this is the last workflow slice; otherwise record `N/A — later plan slices remain` and run it after the last slice.
+- [ ] The applicable pre-commit verification passed: checkpointed-build's bounded repair or updated-slice checkpoint, or the repository's focused verification. Required proof is supplied before completion even when a delegated worker was prohibited from running checks; missing proof is not a verified result.
+- [ ] Final assembled quality, platform, and integration proof is valid after the last workflow slice or repair. Before that milestone, name its owner and leave final verification pending; a completed intermediate repair does not declare the workflow complete.
 - [ ] Commits are grouped by atomic change and list the finding IDs they address.
 
 A failed gate never authorizes shipping: known issues explain a failure; they do not waive it.

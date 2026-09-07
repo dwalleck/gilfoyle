@@ -121,12 +121,12 @@ Numeric projections are tripwires with rationale. Exceeding one requires inspect
 
 ## Build contract
 
-At each slice checkpoint:
+At each slice or bounded-repair checkpoint, establish these obligations with fresh or valid retained evidence under [workflow contract](references/CONTRACT.md)'s **Evidence validity** rule:
 
 - actual paths, responsibilities, interfaces, and dependency direction match the approved ledger;
 - protected-parent deltas match the plan;
 - the module-shape fence passes;
-- every new shape-fence mutation is red and restoration is green; and
+- every new or changed shape fence, or changed mutation applicability, has observed mutation red and restored green; otherwise valid mutation/restoration results are retained; and
 - any deviation in responsibility ownership returns to `falsifiable-design` rather than being rationalized as plan drift.
 
 A numeric projection overrun with unchanged placement returns to `budgeted-plan`. A new responsibility, wider interface, different seam, or pass-through split returns to `falsifiable-design` and requester approval.
@@ -146,5 +146,7 @@ After the assembled implementation passes its behavioral gates, a reviewer who d
 The reviewer starts without the implementation transcript, plan rationale, or approved ledger. A separate reviewer is preferred; otherwise start a fresh process/context carrying only the production tree and this reconstruction task. After recording the reconstruction, reveal `design.md`, compare it with the approved ledger, and fix every mismatch or revise and reapprove the design. Inability to obtain an isolated context blocks completion; same-context implementer self-attestation is not a review.
 
 The final checkpoint record names the reviewer or isolation method, carries the reconstructed module/interface/responsibility map, lists every mismatch and disposition, and records the final comparison result.
+
+For a later repair or assembled checkpoint, retain a prior isolated review only when **Evidence validity** establishes that its reconstruction and comparison still apply; cite the record and the applicability reason. Rerun invalidated structural review in the isolated context above, covering the affected ownership/interfaces and broadening when impact is uncertain. Valid retention avoids repeated review, not the final assembled-tree conformance obligation.
 
 **Criterion:** every changed production module maps back to exactly one approved ledger row, every mismatch is resolved, and the recorded fresh-context comparison is `PASS` before completion.

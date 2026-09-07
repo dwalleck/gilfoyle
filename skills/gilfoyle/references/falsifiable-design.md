@@ -172,13 +172,13 @@ Record in the Approval section:
 - the date;
 - the list of risk acceptances the requester approved, or `None`.
 
-Any objection means the design is wrong: revise and re-present. Per the contract's approval semantics, a design revision re-records approval; [`budgeted-plan`](references/budgeted-plan.md) refuses to run until this section holds the requester's verbatim words.
+Resolve requester objections before hand-off. Changes to approved decisions follow [workflow contract](references/CONTRACT.md)'s **Approval semantics** and re-record approval; technical verification corrections follow that same boundary rather than restarting design.
 
 Criterion: the Approval section contains the requester's dated, verbatim words and the approved risk-acceptance list.
 
 ## Hand-off
 
-[`budgeted-plan`](references/budgeted-plan.md) refuses to run until `design.md` satisfies the Output requirements below. [`checkpointed-build`](references/checkpointed-build.md) reads the Oracle, Named mutation, and Regression fence columns from the Falsification table; after approval, those definitions change only through revision and re-approval.
+[`budgeted-plan`](references/budgeted-plan.md) consumes a design satisfying the Output requirements below. [`checkpointed-build`](references/checkpointed-build.md) reads the Oracle, Named mutation, and Regression fence columns from the Falsification table. Their owner records corrections under [workflow contract](references/CONTRACT.md)'s **Approval semantics** and revalidates affected results under **Evidence validity**; changing an approved decision requires revision and re-approval.
 
 ## Output
 

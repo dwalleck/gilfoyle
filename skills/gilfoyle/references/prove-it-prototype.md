@@ -8,7 +8,7 @@ Evidence before design: probe the real codebase, check an independent oracle, re
 
 Run when:
 
-- `route.md` routes Empirical. Its T1 evidence names the unverified premise(s); the checklist starts there. Apply the router's evidence-currentness rule. If current applicable evidence already covers every premise, return to [`change-workflow`](references/change-workflow.md) with that evidence and request route correction instead of probing again.
+- `route.md` routes Empirical. Its T1 evidence names the unverified premise(s); the checklist starts there. Apply [workflow contract](references/CONTRACT.md)'s **Evidence validity** rule. Retain applicable premise results by reference and probe only missing or invalidated premises. If existing valid evidence covers every premise, return to [`change-workflow`](references/change-workflow.md) with that evidence and request route correction instead of probing again.
 
 Skip when:
 
@@ -44,7 +44,7 @@ Enumerate premises before writing any probe. A premise is empirical when all of 
 
 - It is a claim about existing-system or external behavior — a resolver, parser, database, third-party API, library, or code written earlier (including your own code from six months ago).
 - The design depends on it — a wrong answer changes the design.
-- Current applicable evidence does not cover it (freshness is owned by the router's T1 test).
+- Valid evidence does not cover it (validity is owned by the workflow contract).
 - It is a question with an observable answer.
 
 Non-premises are recorded as `N/A — <reason>` in the checklist rather than probed: behavior already decided in `spec.md` (the spec's job), claims about the feature being built (nothing exists yet), and performance or scale targets (design and checkpoint territory).
@@ -89,6 +89,8 @@ Write `evidence.md` and `probe.<ext>` in the canonical directory, resolved per [
 
 ## Process
 
+On re-entry, preserve discharged premise rows and their IDs. Apply the contract's **Evidence validity** rule before steps 4–9: those steps run only for missing or invalidated evidence; unchanged rows retain their prior result links and applicability reasons. Hand-off still accounts for every premise.
+
 ### 1. Resolve the directory and read the route
 
 Resolve the canonical directory per [workflow contract](references/CONTRACT.md). Read `route.md`: its Empirical-premise row seeds the checklist. Read `spec.md` when the route required one — its behaviors bound what the premises serve.
@@ -97,7 +99,7 @@ Resolve the canonical directory per [workflow contract](references/CONTRACT.md).
 
 ### 2. Enumerate the premise checklist
 
-Run the Empirical-premise checklist over the route's evidence, the request, and `spec.md`. Give every checklist entry a stable ID (P1, P2, …). Reduce each empirical premise to the smallest factual question — "what does this resolver do with an empty prefix?", not "how does parsing work?". Record non-premises as `N/A — <reason>`. If every entry is a non-premise, return to [`change-workflow`](references/change-workflow.md) with the classification evidence and request route correction.
+Run the Empirical-premise checklist over the route's evidence, the request, and `spec.md`. Preserve existing IDs and assign new entries stable IDs (P1, P2, …). Reduce each unverified premise to the smallest factual question — "what does this resolver do with an empty prefix?", not "how does parsing work?". Retain discharged premises as `PASS` with valid evidence references; record non-premises as `N/A — <reason>`. If no premise needs new evidence, return to [`change-workflow`](references/change-workflow.md) with the classification and validity evidence and request route correction.
 
 **Completion:** every checklist entry has an ID; every empirical premise has a smallest question; every non-premise carries `N/A — <reason>`; at least one empirical premise remains or route correction has been requested.
 
@@ -131,9 +133,9 @@ Not legitimate — these share the probe's failure mechanism: "the test fixture 
 
 ### 7. Run both and compare
 
-Run the probe and independent oracle for every empirical premise, then compare their outputs item by item. Record both outputs and a `PASS` or `FAIL` verdict. Checklist entries marked `N/A — <reason>` are non-premises and are not probed.
+Run the probe and independent oracle for every premise needing new evidence, then compare their outputs item by item. Record both outputs and a `PASS` or `FAIL` verdict. Retained comparisons reference the previous outputs and explain their applicability; non-premise `N/A — <reason>` rows are not probed.
 
-**Completion:** every empirical premise has a comparison row with both outputs and a `PASS` or `FAIL` verdict; every non-premise retains its `N/A — <reason>`.
+**Completion:** every empirical premise has fresh or retained valid comparison evidence with both outputs and a verdict; every non-premise retains its `N/A — <reason>`.
 
 ### 8. Investigate disagreement
 
@@ -161,9 +163,9 @@ No hand-off while any line below fails. Before handing off, confirm:
 - [ ] `evidence.md` exists at the resolved canonical path.
 - [ ] Every checklist ID has a verdict: `PASS`, `FAIL`, or `N/A — <reason>`; no entry is unrecorded.
 - [ ] Every empirical premise is `PASS`; every `N/A` entry is classified as a non-premise; no `FAIL` remains.
-- [ ] `probe.*` artifacts exist for every empirical premise, directly answer their named premise(s), and run against the real codebase.
+- [ ] Each empirical premise has its probe artifact or a retained result reference satisfying Evidence validity.
 - [ ] Each empirical premise's oracle mechanism is stated and differs from the probe's mechanism and the production implementation's.
-- [ ] Every `PASS` premise has a comparison row with both outputs.
+- [ ] Every `PASS` premise has a comparison row containing or linking both outputs and, for retained evidence, its applicability reason.
 - [ ] Every observed `FAIL` has a recorded cause and a tracker ID when it revealed an underlying-system defect or intended future work; no active `FAIL` reaches hand-off.
 - [ ] Data source is recorded (production-shaped or approved snapshot).
 - [ ] Related issues records the upstream evidence or this run's search; no upstream search was repeated.

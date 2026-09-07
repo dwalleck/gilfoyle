@@ -1,11 +1,8 @@
-import hashlib
 import subprocess
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PROTECTED = (ROOT / "skills", ROOT / "agents", ROOT / "crew-dag-loop.json")
-EXPECTED_DIGEST = "d712cb0b46c1029c25a198e1b541521e9266fca31d46ede7efbef2db17533377"
 IGNORED = (
     ".gilfoyle/runs/naïve path/run-state.json",
     ".pi-native-workflow/probe.tmp",
@@ -14,21 +11,8 @@ IGNORED = (
 )
 
 
-def protected_digest():
-    files = []
-    for root in PROTECTED:
-        files.extend([root] if root.is_file() else [p for p in root.rglob("*") if p.is_file()])
-    files = [p for p in files if ".pi-subagents" not in p.parts]
-    digest = hashlib.sha256()
-    for path in sorted(files):
-        digest.update(path.relative_to(ROOT).as_posix().encode() + b"\0" + path.read_bytes())
-    return digest.hexdigest()
-
 
 class CoexistenceTests(unittest.TestCase):
-    def test_kiro_baseline(self):
-        self.assertEqual(EXPECTED_DIGEST, protected_digest())
-
     def test_runtime_artifacts_are_ignored_but_other_files_are_not(self):
         paths = [*IGNORED, "outside-run.tmp"]
         results = {

@@ -13,15 +13,15 @@ Completion is checkpointed-build's to judge; this stage defines slices, not thei
 
 ## When this stage runs
 
-After [`falsifiable-design`](references/falsifiable-design.md) produced an approved `design.md`. Read [workflow contract](references/CONTRACT.md) first — it owns the shared definitions this stage depends on: the slice definition, gate states, the review-size gate, the tracker taxonomy, artifact ownership, and checkpointed-build's exclusive ownership of slice completion.
+After [`falsifiable-design`](references/falsifiable-design.md) produced an approved `design.md`. Read [workflow contract](references/CONTRACT.md) first — it owns the shared definitions this stage depends on: the slice definition, gate states, Evidence validity, Approval semantics, the review-size gate, the tracker taxonomy, artifact ownership, and checkpointed-build's exclusive ownership of slice completion.
 
-Also enter when [`assessing-review-feedback`](references/assessing-review-feedback.md) hands off accepted behavior-changing fixes to an existing approved `plan.md`.
+Also enter when review repairs change plan scope, budget, or partition inputs, or require a plan update following an approved design/spec change. An implementation repair within the approved contract goes directly from [`assessing-review-feedback`](references/assessing-review-feedback.md) to checkpointed-build's bounded repair entry; it does not require this stage.
 
 Resolve the artifact directory per the contract: exactly one `.<change-slug>/` matches the change — use it; several plausibly match — name them and ask; none exists — run [`change-workflow`](references/change-workflow.md) first.
 
 Required inputs:
 
-- `.<change-slug>/design.md` — required; it must satisfy [`falsifiable-design`](references/falsifiable-design.md)'s Output requirements, verified in step 1. Missing or invalid: stop and return to [`falsifiable-design`](references/falsifiable-design.md).
+- `.<change-slug>/design.md` — required; it must satisfy [`falsifiable-design`](references/falsifiable-design.md)'s Output requirements. Verify in step 1 for initial planning, or use the scoped review re-entry below. Missing or invalid: stop and return to [`falsifiable-design`](references/falsifiable-design.md).
 - `route.md` — the route and its evidence.
 - `spec.md` — when present; its delivery increments shape the PR partition.
 - `evidence.md` and `probe.*` — Empirical routes; the design's oracles may reference the evidence oracle.
@@ -31,16 +31,17 @@ Target artifact: `.<change-slug>/plan.md`.
 
 ### Review re-entry mode
 
-On review re-entry:
+Use this mode only for changed plan inputs; the initial-planning Process below remains unchanged.
 
-1. Run Process step 1 against the current approved design.
-2. Preserve every unaffected slice and PR increment. Revise the uncommitted owning slice, or append one review-fix slice when that slice is already committed.
-3. Name every resolved finding ID in the review-fix slice's Purpose. Map the root-cause behavior to existing design Claim IDs and fill all fourteen fields. No covering design row means the design is incomplete: return to [`falsifiable-design`](references/falsifiable-design.md) before planning the fix.
-4. Apply Process step 3 to every changed or appended slice, then apply Process steps 4–6 to the whole plan.
+1. Read the compact repair record owned by [`assessing-review-feedback`](references/assessing-review-feedback.md). Identify affected design rows, owning slices, and changed planning inputs. A missing covering claim or changed approved behavior, ownership, interface, architecture, or risk returns to the owning spec/design stage before planning; apply the contract's Approval semantics.
+2. Apply step 1's design criteria to affected rows and their dependencies, using Evidence validity for prior proof. Preserve the prior approval and checks for unaffected decisions by reference rather than rereading the whole design. Broaden the scope when dependencies or evidence applicability are uncertain; a known `FAIL` remains blocking.
+3. Preserve unaffected slices and PR increments. Update affected fields in the owning slices; create a fully specified slice only when changed scope introduces a genuinely new atomic change. Preserve committed history by recording the affected plan amendment and its repair reference, not by declaring prior implementation complete again. Every changed or new field is traceable to the finding IDs and design claims; unchanged fields retain their approved values.
+4. Apply steps 2–3 and 5–6 to the affected rows, slices, and changed text. Recheck global constraints only when their inputs change: coverage/dependencies, module growth, diff sum and churn margin, partition, and increment mergeability. Recompute affected totals with unchanged contributions retained; preserve the existing 4,000-line partition rule. Record which checks changed and which prior conclusions remain applicable.
+5. Save the affected update in `plan.md` and return to [`checkpointed-build`](references/checkpointed-build.md) with the existing compact repair record. This stage owns plan changes, not a second repair artifact or checkpoint result.
 
-Criterion: the plan changes only where the accepted findings require it; every review-fix slice is traceable to its finding IDs and design claims; every global plan criterion still holds.
+Criterion: changed inputs and their affected rows/slices satisfy the applicable initial-planning criteria; global constraints affected by those inputs are checked; unaffected fields and valid conclusions remain referenced; required approvals are recorded. An ordinary approved-contract repair needs neither a new fourteen-field slice nor a whole-plan/design reread.
 
-## Process
+## Process — initial planning
 
 Each step ends with a completion criterion. Do not start the next step until the current one's criterion holds.
 
@@ -151,15 +152,15 @@ Criterion: `plan.md` has one section per slice, every field filled, the applicab
 
 ## Hand-off
 
-[`checkpointed-build`](references/checkpointed-build.md) consumes `plan.md` and exclusively judges slice completion per the contract. This stage defines slices and their checkable fields; it does not run or restate that checkpoint, and it never declares a slice complete.
+[`checkpointed-build`](references/checkpointed-build.md) consumes `plan.md` and exclusively judges slice or repair completion per the contract. Initial planning hands off the full plan; review re-entry hands off the affected update and the compact repair record in the existing review decision surface. This stage defines checkable fields; it does not run or restate the checkpoint, and it never declares a slice or repair complete. Required proof remains a pre-commit gate.
 
 ## Output
 
-`.<change-slug>/plan.md` with:
+For initial planning, `.<change-slug>/plan.md` with:
 
 - one section per slice, every mandatory field filled, conditional fields as `N/A — reason`;
 - the module growth ledger, or the route/design-backed `N/A`;
 - the partition arithmetic — summed diff estimates, documented churn margin, total, and every PR increment with its mergeable definition;
 - the self-review result.
 
-If any of these is missing, the stage did not run.
+If any initial-planning output is missing, that stage did not run. For review re-entry, preserve that complete plan and record only the affected amendments and scoped self-review described above; the compact repair record stays in its existing decision surface.
