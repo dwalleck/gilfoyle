@@ -6,15 +6,18 @@ Stopping is the most important step. Drift caught at slice N is cheap; drift cau
 
 ## When this stage runs
 
-After [`budgeted-plan`](references/budgeted-plan.md) has produced a plan with all gates passing — not before. Before consuming `plan.md`, read [workflow contract](references/CONTRACT.md): it owns the gate states, evidence validity, approval semantics, slice and independent-oracle definitions, branch discovery, review-size tripwire, and tracker discovery used here. Initial slices retain the full entry and critique requirements below; approved-contract review repairs use the bounded entry.
+After [`budgeted-plan`](references/budgeted-plan.md) has produced a plan with all gates passing — not before. Before consuming `plan.md`, read [workflow contract](references/CONTRACT.md): it owns the gate states, evidence validity, approval semantics, slice and independent-oracle definitions, branch discovery, review-size tripwire, and tracker discovery used here. Initial slices retain the full entry and critique requirements below; approved-contract review and qualification repairs use the bounded entry.
 
 ### Bounded repair entry
 
-For a review finding whose fix is determined by the approved contract, consume the covering claims in `design.md`, owning slice in `plan.md`, and **Compact repair record** from [`assessing-review-feedback`](references/assessing-review-feedback.md), even if the owning slice is already committed. That stage owns the record's format and incorporates this stage's returned gate judgment.
+For a fix determined by the approved contract under its **Approval semantics**, consume only the covering claims or established obligations and owning slices:
+
+- **Review finding:** consume the **Compact repair record** from [`assessing-review-feedback`](references/assessing-review-feedback.md), even if the owning slice is already committed. That stage owns the record's format and incorporates this stage's returned gate judgment.
+- **Qualification failure during implementation or final integration:** stay in this stage. The existing owning slice record carries the failure, root-cause correction, governing obligation, and affected-check results and evidence disposition; name the responsible slices for a cross-slice interaction. Use this record even when the slice is already committed; no review finding or separate repair artifact is required.
 
 Inherit unchanged approved plan fields by reference; critique only the affected inherited obligations. Perform the relevant impact analysis, helper search, implementation/TDD, symmetry audit, and proof steps below for the repair, not a fresh 14-field slice or a replay of the whole slice cycle. Reconcile all nine gate states using fresh or valid retained evidence, then apply the relevant sweep, atomic commit, drift, and size obligations to the actual change.
 
-No covering claim, or a change to approved behavior, ownership, interface, architecture, or risk, returns to the owning design/spec stage for approval and then `budgeted-plan` for the affected plan update. Changed plan scope, budget, or partition inputs go to the plan owner for an affected-only update. Technical proof repairs follow the contract's approval semantics; bounded repair does not waive changed obligations or initial approval.
+Escalation follows the contract's **Approval semantics**; a changed or unresolved approved decision returns to the owning design/spec stage for approval and then `budgeted-plan` for the affected plan update. Changed plan scope, budget, or partition inputs go to the plan owner for an affected-only update. Bounded repair does not waive changed obligations or initial approval.
 
 ## The gate — stated once
 
@@ -111,14 +114,14 @@ Resolve the nine items from **The gate** in order and record each state as `PASS
 
 Classify the failure:
 
-- **Implementation or tool failure** whose correct fix the contract already determines — diagnose and repair it yourself. Recheck failed and newly invalidated evidence; retain applicable conclusions. Stay on this slice, or use the bounded entry for review repair.
-- **Changed approved specification, scope, architecture, or explicit risk acceptance** — return to the owning artifact and user approval under the contract. Plan-only scope/budget/partition updates go to the plan owner.
+- **Implementation, tool, or technical-proof failure** whose correct fix the contract already determines — use the bounded repair entry in this stage. Diagnose the root cause, make the targeted correction, and recheck failed and newly invalidated evidence; retain applicable conclusions. Multiple distinct qualification failures do not themselves trigger redesign or reset evidence. If an attempted correction still fails, continue diagnosis against the governing obligation; escalation depends on a changed or unresolved decision, not the number of failures or attempts.
+- **Changed or unresolved specification, ownership, interface, architecture, oracle meaning, or explicit risk acceptance** — return to the owning artifact and user approval under the contract. Plan-only scope/budget/partition updates go to the plan owner.
 
 If the failure matches a known issue in the tracker, record the relationship after the bounded tracker lookup defined in [workflow contract](references/CONTRACT.md). The issue explains the failure; the slice still does not ship with the gate failed. Either absorb the fix into this slice or surface the decision to the user.
 
 A user risk decision does not waive the failed gate: it is recorded by revising the owning artifact — `spec.md`, `design.md`, or `plan.md`, per the contract's single-owner rules — for example as an approved `N/A — reason` for the gate. Reconcile the gate against the revised artifact, rerunning invalidated checks and retaining valid evidence. A remaining `FAIL` never ships.
 
-Never weaken a gate to green: no test rewritten to pass, no assertion relaxed, no mutation deleted because the code looks right.
+Preserve the governing behavior and defect detection when correcting tests. Obsolete golden expectations or incomplete fixtures may be repaired against an approved claim or established obligation, not current implementation output alone; revalidate affected proof under **Evidence validity**. Accepting incorrect behavior, relaxing required assertions, or deleting a required mutation to obtain green remains prohibited.
 
 ### 7. Stale-reference sweep — gate green, before commit
 
@@ -133,7 +136,7 @@ Scan every file this slice modified — plus the files it depends on — for:
 
 ### 8. Commit
 
-One commit per slice or atomic bounded repair. The message names the design claim and references the owning slice/repair record: caller analysis, deviations, gate and mutation results, and fence gaps. Unchanged inherited records remain references. Required evidence and tracker references travel with this behavior-owning commit, so a later rebase or restack keeps them attached to the change they prove; an integration merge commit alone does not carry them. Cite shared, audience-accessible evidence; private transcript paths and credentials are not shared proof.
+One commit per slice or atomic bounded repair. The message names the governing design claim or established obligation under the contract's **Approval semantics** and references the owning slice/repair record: caller analysis, deviations, gate and mutation results, and fence gaps. Unchanged inherited records remain references. Required evidence and tracker references travel with this behavior-owning commit, so a later rebase or restack keeps them attached to the change they prove; an integration merge commit alone does not carry them. Cite shared, audience-accessible evidence; private transcript paths and credentials are not shared proof.
 
 ### 9. Drift check — after commit, before the next slice
 
@@ -163,7 +166,7 @@ When module shape applies, satisfy [module shape](references/module-shape.md)'s 
 
 Writer-local receipts alone do not prove assembled quality, platform behavior, or integration. A task instruction banning writer validation transfers the missing proof to Main; it cannot authorize a verified gate or completion. Missing proof blocks completion until the integration owner supplies it.
 
-If any behavioral check or module-ledger comparison fails, locate the responsible slice or interaction, stop, and resolve it under step 6. Final status is verified only after every applicable obligation has fresh or valid retained proof.
+If any applicable qualification check fails, locate the responsible slice or interaction, stop, and resolve it under step 6 through the bounded repair entry. Final status is verified only after every applicable obligation has fresh or valid retained proof.
 
 ## Red flags
 
@@ -184,4 +187,4 @@ This is not "follow the plan." This is "advance the design hypothesis by one sli
 
 ## Output
 
-For each slice: one commit and all nine gate states returned to the owning slice-record author. For each bounded repair: one atomic commit and those states returned to `assessing-review-feedback` for incorporation in the compact repair record, with inherited plan references instead of a new slice template. Every item is `PASS` or justified `N/A — reason`; no `FAIL` or missing proof. After the final slice or repair: verified assembled quality, applicable platform and cross-slice checks, implementation/oracle comparisons, falsifiers, and regression fences, plus the valid isolated design-conformance record when module shape applies. Fresh and retained results satisfy **Evidence validity**; writer receipts or validation prohibitions alone do not complete the stage.
+For each slice: one commit and all nine gate states returned to the owning slice-record author. For each bounded repair: one atomic commit and those states returned to its record owner — `assessing-review-feedback` for review repairs, the owning slice-record author for qualification repairs — with inherited plan references instead of a new slice template. Every item is `PASS` or justified `N/A — reason`; no `FAIL` or missing proof. After the final slice or repair: verified assembled quality, applicable platform and cross-slice checks, implementation/oracle comparisons, falsifiers, and regression fences, plus the valid isolated design-conformance record when module shape applies. Fresh and retained results satisfy **Evidence validity**; writer receipts or validation prohibitions alone do not complete the stage.
