@@ -22,8 +22,8 @@ Read [workflow contract](references/CONTRACT.md) before producing or consuming a
 
 - Enumerate every review comment into rows with stable IDs (`F1`, `F2`, …). One row per finding; the same comment repeated by several reviewers is one finding with several sources.
 - For each finding, restate the bug claim and the fix claim in your own words. A comment with no fix claim is noted as such — the evaluation is then yours alone.
-- Record each finding's **landing impact** in its row: once the evidence state is decided, the `note` opens with `blocks` or `defers`. The round's own verified judgment decides that set, never the reviewer's severity label; naming the blocking rows first orders repair and verification so the branch stays landable throughout.
-- **Completion:** every comment in the review appears in exactly one row, and each row states the claims it makes and its landing impact; the landing-blocking findings are named first, and repair and verification order follow them.
+- Record each finding's **landing impact** in its row: once the evidence state is decided, the `note` opens with `blocking` or `non-blocking` — whether an unfixed instance must be fixed before this lands. Every row has one: a refuted claim and a permanent non-goal are `non-blocking` because nothing is left to fix, never because something was deferred. Deferral travels with the decision's tracker suffix, never with this value. The round's own verified judgment sets it, never the reviewer's severity label; naming the `blocking` rows first orders repair and verification so the branch stays landable throughout.
+- **Completion:** every comment in the review appears in exactly one row, and each row states the claims it makes and its landing impact; the `blocking` rows are named first, and repair and verification order follow them.
 
 ### 2. Verify — assign exactly one evidence state
 
@@ -99,7 +99,7 @@ The output is a decision log: a section in the PR description, a comment thread,
 - `evidence` — the reproduction or check that decided the state; `N/A — <reason>` when `Not-applicable`; for `Unverified`, what is missing.
 - `decision` — exactly one of `Accept`, `Modify`, `Reject`, optionally suffixed ` (tracked at <id>)`.
 - `fix` — the applied change for `Accept`/`Modify`, naming its atomic change; `N/A — <reason>` for `Reject`.
-- `note` — one-line rationale opening with `blocks` or `defers`; permanent non-goals record the rationale justifying no tracker issue.
+- `note` — one-line rationale opening with `blocking` or `non-blocking`; permanent non-goals record the rationale justifying no tracker issue.
 
 A finding whose claim is wrong is already `Refuted`. Record separately, under a **Review errors** heading beside the rows, the review's own errors in statements no row covers — a stale anchor, a wrong count or symbol, an impact that does not exist, or a fixture derived from the implementation rather than the provider. The next round reads this log: an unrecorded error is re-derived.
 
