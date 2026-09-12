@@ -25,7 +25,7 @@ Execute budgeted-plan's process. Each slice is implementable in ≤30 min, touch
 
 Apply the **doc-comment-as-contract** rule (load-bearing precondition → runtime check; sanity hint → `debug_assert!`) and the **output-stream** rule (data → stdout, diagnostics → stderr).
 
-Run the **five self-review lists** (loops, fixtures, preconditions, write targets, tracker refs). The plan is not done with gaps. Add the `## Plan Self-Review` section showing all five empty.
+Run **budgeted-plan** step 6's **self-review list**. The plan is not done with gaps. Add the `## Plan Self-Review` section showing every check clean.
 
 ## Decision
 

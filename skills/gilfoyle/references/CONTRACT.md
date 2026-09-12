@@ -32,10 +32,10 @@ A downstream stage loaded directly consumes an existing artifact directory witho
 
 ## Gate states
 
-- A gate is `PASS`, `FAIL`, or `N/A — reason`.
+- A gate is `PASS`, `FAIL`, or `N/A — reason`; `N/A — approved risk: <reason>` marks an obligation the requester explicitly accepted, and each acceptance is listed in its owning artifact's approval record.
 - `PENDING` marks a falsifier awaiting discharge by a named owner and step; it is a lifecycle status, not a gate state.
 - A failed mandatory gate never authorizes shipping. Known issues explain failures; they do not waive them.
-- All conditional fields are present as `N/A — reason`, so completeness is mechanically checkable.
+- All conditional fields are present as `N/A — reason` or `N/A — approved risk: <reason>`, so completeness is mechanically checkable.
 - No gate references an absent field, stage, artifact, skip list, estimate, or mutation.
 
 ## Evidence validity
@@ -53,6 +53,8 @@ Revalidate conclusions affected by a changed production path, fence, fixture, or
 
 An invalidated result remains historical evidence, not a current `PASS`. Name the responsible verifier and required check; completion waits for its result. Use `N/A — reason` only for an inapplicable obligation, never for unavailable, deferred, failed, or stale proof. A retained `PASS` is still `PASS`, with its evidence link and applicability reason.
 
+Evidence for a run that can silently skip — an environment gate, an ignored test, an early return, a missing prerequisite — carries a receipt proving the assertion executed; a prose sentence is not evidence for a row that did not run. Every figure, count, and head label in a record is anchored to the revision that produced it.
+
 **Completion:** every applicable obligation has fresh or retained valid evidence for the state being judged; every invalidated obligation has been reverified; no unresolved `FAIL` remains.
 
 ## Definitions
@@ -62,12 +64,14 @@ An invalidated result remains historical evidence, not a current `PASS`. Name th
 - **Stage completion criterion** — the checkable end state under the stage's `Completion`, `Hand-off gate`, or `Output` heading.
 - **Review-size gate** — projected or actual cumulative changed lines, including a documented churn margin, `> 4,000` requires independently mergeable PR increments.
 - **Branch discovery** — use the repository's default/upstream branch; never hard-code `origin/main`.
+- **Receipt** — the record a stage produces for its own obligation, stating what it checked, against which revision, and with what result: a gate item's list, a repair record's block, or a run's result reference. A receipt is evidence for the checks it names and no others; it is not the artifact it proves.
 - **Evidence record** — the single owning record linking a claim to its checked source state, inputs, environment, and result. Plan, review, commit, and publication summaries reference it; none keeps its own editable copy of the record's changing contents.
 
 ## Tracker taxonomy
 
 - **Permanent non-goal** — record the rationale in the artifact (design negative space, spec out-of-scope). No tracker issue.
 - **Intended future work** — cite a verified tracker ID. Discover the repository's tracker and use its native command; never hard-code `rivets`. Verify the ID exists and its content covers the deferred work before citing; file one when no covering issue exists.
+- **A verified tracker ID defers work; it authorizes nothing.** A changed behavior, a relaxed obligation, a dropped guard or fence, or an accepted risk needs the approval named in **Approval semantics**; the tracker ID accompanies that authorization as the deferral reference, and never substitutes for it.
 
 ## Approval semantics
 

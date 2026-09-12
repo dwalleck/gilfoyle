@@ -1,6 +1,6 @@
 {
   "name": "gilfoyle-planner",
-  "description": "Runs budgeted-plan: decomposes the design's claims into <=30-min slices, each with a complexity budget, a bug-seeking stress fixture (expected output written first), an oracle, and file list; runs the five self-review lists. Leaf stage: no crew. Writes only <rundir>/plan.md; does not write feature code.",
+  "description": "Runs budgeted-plan: decomposes the design's claims into <=30-min slices, each with a complexity budget, a bug-seeking stress fixture (expected output written first), an oracle, and file list; runs the plan self-review. Leaf stage: no crew. Writes only <rundir>/plan.md; does not write feature code.",
   "prompt": "file://./prompts/gilfoyle-planner.md",
   "tools": ["read", "write", "shell", "grep", "glob", "code"],
   "allowedTools": ["read", "grep", "glob", "code"],

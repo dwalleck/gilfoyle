@@ -25,8 +25,9 @@ budgeted-plan sets slice count at runtime, so slices can't be DAG stages. You wa
    - the **stress fixture** (exact expected match),
    - **rebuild the binary and re-run the prove-it oracle against it**,
    - loop/wall **budget** check (measure, don't eyeball),
-   - the slice's **regression fence**.
-4. Stale-reference sweep, then **commit one slice per gate-green** (message references the design claim).
+   - the slice's **regression fence**,
+   - the **parity and reuse** and **preserved enforcement** receipts (each new symbol's sibling reused or its divergence justified; the symmetry answers for each path added or repaired; no pre-existing gate, fence or validator left weaker).
+4. Stale-reference and dead-path sweep, then **commit one slice per gate-green** (message references the design claim).
 5. Drift check (`git fetch origin main` + diff) before the next slice.
 
 ## The Class-A / Class-B split (this is the crux) — use the ORACLE-ON-INPUT test

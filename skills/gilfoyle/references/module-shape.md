@@ -82,7 +82,7 @@ For every protected parent, also record:
 
 ### 5. Define a mechanical shape claim
 
-Every ledger rule that can regress becomes a design claim. Its falsifier is a source/dependency/diff census, not reviewer intuition. The permanent fence SHOULD be an issue-local standalone oracle under `.<change-slug>/oracles/` and MAY use an issue-local data manifest when that keeps policy out of code.
+Every ledger rule that can regress becomes a design claim. Its falsifier is a source/dependency/diff census, not reviewer intuition. The permanent fence SHOULD be an issue-local standalone oracle under `.<change-slug>/oracles/` and MAY use an issue-local data manifest when that keeps policy out of code. Where the repository already has a permanent gate — a shared entry point with its own policy ledger — the change extends it rather than forking it: a ticket-scoped copy, a repointed entry point, an orphaned ledger, or an unexplained change to a ceiling that gate owns is a policy change requiring the approved ledger and requester approval, not a build step. A change that brings a module to its ceiling updates that ceiling in the same change, recording the rationale in that ledger. The replacement fence reproduces the cases the previous fence's recorded runs covered, or names the case it drops and who approved that.
 
 The fence checks the applicable set of:
 
