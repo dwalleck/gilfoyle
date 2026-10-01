@@ -4,9 +4,9 @@ TDD verifies that a single function does what its caller expects on inputs you h
 
 What this cycle does NOT check — those gates belong to [`checkpointed-build`](references/checkpointed-build.md), at the completed slice or bounded-repair checkpoint, never per test cycle:
 
-- Changed implementation versus independent oracle agreement.
+- Applicable implementation/oracle comparisons.
 - The plan-defined stress fixture.
-- Regression-fence and named-mutation behavior.
+- Slice regression coverage and applicable named-mutation proof.
 
 If you think "unit tests pass, therefore the feature works," you are misusing the tool. Unit tests proving things they do not prove is how features ship with the wrong algorithm.
 
@@ -14,7 +14,7 @@ If you think "unit tests pass, therefore the feature works," you are misusing th
 
 Inside a slice during [`checkpointed-build`](references/checkpointed-build.md), for any new function or any modified behavior of an existing function. Before the first cycle, read [workflow contract](references/CONTRACT.md) and the slice's section of `plan.md`; its claim, oracle, stress fixture, and budgets remain in scope for the entire cycle.
 
-In a bounded repair, inherit that section by reference and apply this cycle to the changed behavior, not every function in the original slice. A qualifying existing red/green observation may be reused under the contract's **Evidence validity** rule; new or changed tests still need observed failure for the intended defect and restored green. These focused writer-local checks do not replace the assembled quality, platform, and integration proof owned by `checkpointed-build`.
+In a bounded repair, inherit that section by reference and apply this cycle to the changed behavior, not every function in the original slice. Reuse qualifying red/green observations under the contract's **Evidence validity** rule. Behavior being fixed still needs a discriminating failing-before/passing-after test; review-driven coverage follows [`falsifiable-design`](references/falsifiable-design.md)'s **Mutation sensitivity** requirement. Other injected-fault requirements follow the design's **Verification ladder**. These focused checks do not replace the assembled quality, platform, and integration proof owned by `checkpointed-build`.
 
 ## The rule
 
@@ -28,7 +28,7 @@ RED → GREEN → BUDGET (when this cycle changed complexity) → REFACTOR
 
 - One behavior per test. Clear name: behavior described, not implementation.
 - Real code where possible; mocks only when the dependency is truly external (network, time, randomness).
-- Watch it fail. **Mandatory.** A test that passes immediately has not demonstrated RED — either it never exercises the new behavior, or it already passes for the wrong reason. Fix the test until it fails for the intended reason.
+- For behavior being added or fixed, watch the test fail for the intended reason before implementation, then pass after it. **Mandatory.** A test green on the buggy baseline does not prove the repair. When only extending coverage for already-correct behavior, record that fact and the observed result; review-driven coverage must satisfy **Mutation sensitivity** in `falsifiable-design`, while other coverage follows the design's mutation-applicability decision.
 
 ### GREEN — minimal code to pass
 
@@ -64,7 +64,7 @@ If the name still fits, nothing further is required — no comment, no commit-me
 
 For each cycle:
 
-- [ ] The test went red, then green — fresh observations or valid retained evidence with result reference and applicability reason
+- [ ] New/fixed behavior has observed red/green proof — fresh or validly retained; coverage-only work records its existing-behavior result and satisfies applicable **Mutation sensitivity** proof.
 - [ ] Loop budget holds at production scale — or `N/A — reason` (cycle did not change complexity)
 - [ ] Semantic-name check applied: renamed when the name misleads and all callsites updated atomically; otherwise the existing name was confirmed accurate
 
@@ -73,6 +73,7 @@ If any item fails, the cycle is not done. Fix it within the cycle — rewrite or
 ## Red flags
 
 - "Tests pass, ship it." Tests passing is necessary, not sufficient — and the gates beyond this cycle are not waived by green tests.
+- "I'll skip the failing test or replace its expected value with the current output." No. Follow `checkpointed-build` step 6's test-preservation and proof-owner rules; a green label is not a repair.
 - "I'll skip the BUDGET check, the test is fast." Tests are tiny. Production is not. The check is one line of complexity accounting; do it.
 - "I'll rename and update the callers later." Later is never. A half-rename is worse than no rename.
 - "The name is misleading but renaming is churn." Every future reader pays the wrong mental model. Rename — atomically, in this change.
@@ -84,4 +85,4 @@ A scoped version of TDD that does its actual job — unit-level correctness — 
 
 ## Output
 
-Per cycle: observed red/green proof for the behavior, an implementation that fits the slice's local complexity budget (or a recorded `N/A — reason`), and either a refactor or an explicit finding that no cleanup is needed, with the semantic-name check applied atomically. Proof may be fresh or validly retained under **Evidence validity**; changed code, tests, or complexity require rechecking invalidated conclusions. If any of that is missing, the cycle did not finish. Finish it.
+Per cycle: the applicable proof above, an implementation that fits the slice's local complexity budget (or a recorded `N/A — reason`), and either a refactor or an explicit finding that no cleanup is needed, with the semantic-name check applied atomically. Proof may be fresh or validly retained under **Evidence validity**; changed code, tests, or complexity require rechecking invalidated conclusions. If any of that is missing, the cycle did not finish. Finish it.

@@ -123,9 +123,9 @@ Use one probe per premise, or one probe for several premises only when the same 
 
 ### 6. Define the oracle
 
-Write down, in one sentence, how the same answer is computed through a different failure mechanism than the probe and the production implementation. If the probe uses the AST resolver, the oracle uses `grep`; if the probe calls the HTTP API, the oracle hand-counts the database. The oracle may be tedious; it must be unaffected by the same bug.
+Record the independent mechanism in `evidence.md`'s Oracle section. Prefer existing CLI/reference tools, shell pipelines, independently hand-counted tables, or direct system evidence; a different language alone does not make a computation independent.
 
-Legitimate oracles: shell pipelines; existing CLI tools (`cargo tree`, `git log`, `jq`); a one-off script in a different approach or language; a hand-counted table; a human who knows the system.
+For a bespoke oracle, that same entry names the uncovered gap and bounded inputs required by the contract. Apply its **Verification complexity stop** to repeated oracle repairs; independent ground truth remains required, custom infrastructure does not.
 
 Not legitimate — these share the probe's failure mechanism: "the test fixture says so" (the fixture is part of the system under test); "the design doc claims" (the doc is what you are trying to falsify); "another part of the same tool computes it the same way"; "it looks right" (sensible-looking output is how bugs survive).
 
@@ -144,7 +144,7 @@ Disagreement is information; it goes upstream, never downstream. The causes, in 
 1. **The underlying system is broken.** Before filing anything, check `evidence.md`'s Related issues for an existing ticket describing the symptom — the drift may be a re-discovery of filed work. Link the existing ticket and note the residual gap; when no ticket exists, file one with the tracker's native command. Record the ticket ID. The premise cannot be validated on a broken substrate: either the feature rescopes around the broken part (a user decision) or the premise stays `FAIL`.
 2. **The model of the system is wrong.** The system does something unpredicted. Update the model and record the learning.
 3. **The probe is wrong.** Fix it and re-run.
-4. **The oracle is wrong.** Fix it and re-run. Last resort: the oracle's job is independence — an oracle "fixed" to match the probe is no oracle.
+4. **The oracle is wrong.** Correct it under the contract's **Verification complexity stop**, then re-run. Preserve independence; matching the probe is not the oracle's specification.
 
 Never edit production code, the spec, or recorded outputs to obtain agreement.
 

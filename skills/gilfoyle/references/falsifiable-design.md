@@ -25,6 +25,22 @@ Required inputs:
 
 Target artifact: `.<change-slug>/design.md`.
 
+## Verification ladder
+
+Choose the lowest sufficient level for each claim before implementation; record the choice and covered inputs in its Falsifier cell:
+
+1. **Existing behavioral test** — reuse or extend the established suite to assert the declared consumer-visible outcome.
+2. **Ordinary consumer smoke** — drive the real entry point and check concrete results where tests leave an integration or environment gap. Required smoke runs remain additive even when level 1 suffices.
+3. **Independent differential oracle** — compare the same inputs through a different failure mechanism. Required for exact parity, complex transformations, and claims explicitly classified high-risk in the request, repository policy, or design. Reuse an established reference/tool or independently derived fixtures first; bespoke machinery follows the contract's named-gap rule. Empirical premises retain the independent ground-truth check owned by `prove-it-prototype`; that does not require a custom oracle for every later claim.
+
+Ordinary ownership verification follows [module shape](references/module-shape.md)'s **Design procedure**, not a bespoke source analyzer by default.
+
+Decide Oracle and Named mutation applicability separately in their existing cells. An ordinary behavioral claim may record `N/A — ordinary behavioral verification sufficient: <named test/smoke, covered outcome, and why no independent comparison or mutation is needed>`. An ownership-only claim may instead record `N/A — ownership verification: <compiler/dependency check and review evidence specified by module shape>`. These choices are part of design approval, not checkpoint-time waivers. They leave falsifiers, applicable regression coverage, repository gates, and required smokes intact; a known product failure or failed required proof cannot be relabeled optional.
+
+**Mutation sensitivity:** retain cheap named mutations when useful. Require them for a bespoke checker's declared detection obligations, a demonstrated blind/vacuous fixture, controlled latency qualification, or an existing mandatory mutation requirement. Otherwise ordinary behavioral coverage can justify the explicit Named mutation `N/A`. For an applicable mutation, name the plausible defect, code change, and expected red result; proof is bounded to the declared obligation, not every imaginable checker evasion.
+
+New tests/fixtures, or changes to what they exercise or assert, introduced in response to a review finding require observed sensitivity to the intended defect: red, then green after correction or restoration. A valid actual pre-repair red/after-fix green receipt can supply this proof; otherwise use a cheap named mutation. Record the intended observable and both baseline revisions in the existing repair receipt. An ordinary Named mutation `N/A` cannot waive this requirement. Retain still-valid sensitivity proof; docs/comments/formatting alone do not invalidate it. This does not replace other independently required mutations or require extra mutation of unrelated ordinary features.
+
 ## Process
 
 Each step ends with a completion criterion. Do not start the next step until the current one's criterion holds.
@@ -79,7 +95,7 @@ For a subtractive change, enumerate what the removed constraint was silently enf
 - List the "can't happen" facts it guaranteed and walk the chain: a blocking loop guarantees no other command runs mid-turn, which guarantees a mutable field cannot change mid-operation, which guarantees later reads see a consistent value. Each link is a separate assumption.
 - For each fact, ask whether the thing it forbade can now happen; grep every reader and mutator of the state the constraint protected.
 
-Each now-possible violation becomes a claim phrased as the property that must still hold, with a named mutation that is the buggy implementation dropping the invariant. Invariants judged still-safe get a one-sentence note.
+Each now-possible violation becomes a claim phrased as the property that must still hold, with verification selected by the **Verification ladder**. Invariants judged still-safe get a one-sentence note.
 
 Criterion: every broken invariant has a claim row or a still-safe note; every moved, rerouted, or weakened behavior has a claim covering the predecessor behaviors, error taxonomy, and serialized output it must keep, or a recorded reason that one of them changes; a purely additive change has its one-sentence classification on record.
 
@@ -87,7 +103,7 @@ Criterion: every broken invariant has a claim row or a still-safe note; every mo
 
 This step anchors the design to structure — which module owns each capability, what interface callers and tests use, and what the implementer may not do. If the environment exposes a skill named `codebase-design`, read it before this step and use its vocabulary (module, interface, depth, seam, adapter).
 
-Read `route.md`'s T2 evidence. When T2 records a module-shape change, read [module shape](references/module-shape.md) and execute its complete **Design procedure**: inventory the current cluster; test the seams; produce three materially different alternatives where ownership is a decision; approve the module and protected-parent ledgers; and define the mechanical shape claim. Record the results under **Module shape** in `design.md`. When T2 records no module-shape change, record `Module shape: N/A — <the T2 evidence that responsibility ownership is unchanged>`.
+Read `route.md`'s T2 evidence. When T2 records a **Length review** trigger, read [module shape](references/module-shape.md) and carry its Length review record and the requester's **Size stop** choice into `design.md`; a trigger with no recorded choice, or one found during design, runs the Size stop before any redesign work. When T2 records a module-shape change, or the requester chose Reshape, execute module shape's complete **Design procedure**: inventory the current cluster; test the seams; produce three materially different alternatives where ownership is a decision; approve the module and protected-parent ledgers; and select ownership verification. When T2 records neither a module-shape change nor a Length review trigger, record `Module shape: N/A — <the T2 evidence that responsibility ownership is unchanged>`.
 
 For every new capability, including a capability behind an unchanged shape, answer:
 
@@ -95,9 +111,9 @@ For every new capability, including a capability behind an unchanged shape, answ
 - **New seam** — the selected interface when no existing module can own it. A capability behind an existing interface says so. A generic seam with one real adapter is rejected unless an intrinsic ownership constraint recorded by the module-shape procedure makes the seam real.
 - **Forbidden** — dependency directions, responsibility duplication, internal call sites, and implementation knowledge that must not cross the seam.
 
-Each placement decision that could silently regress becomes a claim with a **mechanical** falsifier: visibility that makes the wrong call site a compile error, a dependency-direction check, a test written in the owning crate, or the approved module-shape fence. "The reviewer will notice" is not a falsifier.
+Each placement decision that could silently regress becomes a claim with the compiler/dependency check or explicit ownership self-check selected by module shape. Name the rule, inspected paths, and evidence that would establish a violation; "the reviewer will notice" without that scope is not verification.
 
-Criterion: every new capability has Owner, New seam, and Forbidden recorded; T2's module-shape branch is complete or carries its evidence-backed `N/A`; every structural claim has a mechanical falsifier.
+Criterion: every new capability has Owner, New seam, and Forbidden recorded; T2's module-shape/Length-review branch is complete or carries its evidence-backed `N/A`; every structural claim has the selected ownership verification.
 
 ### 5. Write claims
 
@@ -115,13 +131,22 @@ Every claim gets one row, and every row records every field in `design.md` — n
 - **# / Claim** — the claim ID (`C1`, `C2`, …) and its one sentence. [`budgeted-plan`](references/budgeted-plan.md) and [`checkpointed-build`](references/checkpointed-build.md) reference claims by ID.
 - **Input shape** — the step-2 shape(s) the claim covers, or the invariant or placement it guards.
 - **Falsifier** — the experiment that would prove the claim false. It names the input, the expected outcome under the claim, and the result that would falsify the claim. If you cannot write one, the claim is unfalsifiable: rewrite the claim or cut it. Then name at least one **other** cause that would produce the same observation. If one exists, the falsifier is not decisive — strengthen it until the control under test is the only explanation. A shared error category, an upstream guard that fires first, or an input the control never sees all make an assertion pass for the wrong reason. A falsifier asserting **absence** — an empty log, a zero counter, an unfound sentinel — additionally requires a positive control proving the observed thing can occur at all. **Anchor the falsifier at the level the claim names.** A claim about a public entry point is not proved by a fence on the implementor beneath it: every hop between them can drop, replace, or ignore what the claim asserts, and a fence anchored below the claim's level cannot see that. When the claim says "the tool does X", drive the tool.
-- **Oracle** — the independent computation the falsifier compares against: per the contract, a different failure mechanism from the production implementation and — when a probe exists — from the probe as well. "Another part of this feature" is not an oracle.
-- **Named mutation** — the specific buggy implementation that would make the regression fence fail, named mechanically — the file, the change, and the expected red output — so that [`checkpointed-build`](references/checkpointed-build.md) can apply it without interpretation. If you cannot name a mutation that turns the fence red, the fence is decoration — rewrite the fence or the claim. The mutation must edit code that **exists when its fence runs** — this slice's or an earlier one's — and must not require an action the design forbids. Confirm the mutated property is the one the fence measures: an implementation change that leaves the assertion's observable unchanged is not a mutation. When the row's Regression fence is `N/A — approved risk`, the Named mutation records `N/A — approved risk: no fence to mutate`, covered by the same Approval entry.
-- **Regression fence** — the permanent test that fails when the bug class returns. When the falsifier is a deterministic test, the fence can be that test: name it. When the falsifier is a one-shot measurement, the fence must be a deterministic test asserting the measured bound — a measurement without a fence regresses silently. `N/A — approved risk: <reason>` is allowed only as an explicitly approved risk acceptance: the reason states the accepted risk, and the acceptance is recorded in the Approval section (step 11). The fence asserts the observable its named mutation changes: category, reason, limit kind, computed value, request count, or — when the claim itself is cardinality, existence, or acceptance — the count, the presence, or the accept/reject result. That is what localizes a red run to its claim, and the mutation instantiates the bug class that row's Falsifier names. An assertion reporting only that the operation failed, returned something, or grew (`is_some()`, `is_ok()`, a non-empty or length-only check) is insufficient when the claim requires distinguishing category, reason, limit kind, value, or bound — there it reports the same result for every bug class and pins none. A loop asserting fewer fields than the control surface it covers leaves the remaining dimensions unpinned, and an absence assertion carries the positive control the Falsifier field requires. A fence for a bound reads that bound from the enforcement configuration, or from the plan's recorded maximum where the bound is plan-specific, rather than a literal, and turns red when the bound is raised or removed as well as when it is lowered.
+- **Oracle** — the independent comparison selected by the **Verification ladder**, with its required comparison branch or named gap; otherwise the ladder's explicit `N/A` and concrete coverage rationale. An applicable oracle satisfies the contract's independence definition; "another part of this feature" does not.
+- **Named mutation** — the ladder's explicit `N/A`, or the specific buggy implementation that would make the regression fence fail: file, change, and expected red output. The mutation edits code that exists when its fence runs and changes the observable that the fence measures; a compile failure unrelated to the claim is not detection. When the row's Regression fence is `N/A — approved risk`, record `N/A — approved risk: no fence to mutate`, covered by the same Approval entry.
+- **Regression fence** — the permanent check that fails when the bug class returns; reuse an existing behavioral test where sufficient. A deterministic work/operation/virtual-clock assertion in the concurrent functional suite is the fence when it proves the claim; preserve the workload's concurrency. A real-latency claim follows **Performance-fence policy** below. Ownership-only claims may record `N/A — ownership verification: <selected checks/review>` under module shape; an omitted behavioral fence requires `N/A — approved risk: <reason>` recorded in Approval (step 11). Assert the claim's observable: category, reason, limit kind, computed value, request count, or — when the claim itself is cardinality, existence, or acceptance — that result. Any applicable mutation must change that observable.
+
 - **Cost** — what running the falsifier costs: minutes-to-hours or the resource it needs. An estimate, not a gate.
 - **Status** — `PASS`, `FAIL`, or `PENDING — <discharge owner/step>`. Per the contract, `PENDING` marks a falsifier awaiting discharge by a named owner and step — it is a lifecycle status, not a gate state. `PASS`: the falsifier ran and the claim survived. `FAIL`: the claim was falsified — the design must change. `PENDING — <discharge owner/step>`: the falsifier has not run yet, and the entry names who discharges it and where — for example `PENDING — checkpointed-build, per-slice gate (slice assigned in plan.md)`. [`budgeted-plan`](references/budgeted-plan.md) assigns every PENDING falsifier to the slice implementing its claim, and [`checkpointed-build`](references/checkpointed-build.md) discharges it at that slice's checkpoint. `N/A` never appears in Status: a falsifier that has not run is `PENDING`, not `N/A`. A `FAIL` row never ships.
 
-Criterion: every claim has a row; every cell is filled; every oracle is independent by the contract's definition; every row with a fence names its mutation mechanically; every fence names a deterministic test or carries an approved `N/A — approved risk`; every `N/A — approved risk` fence row records `Named mutation: N/A — approved risk: no fence to mutate`.
+Criterion: every claim has a complete row and a ladder-backed verification choice; each applicable oracle is independent; each applicable mutation is mechanical; every fence is a deterministic assertion or controlled benchmark qualification proving its claim, or carries the applicable ownership/risk `N/A`; fence-risk rows carry the matching Named mutation value.
+
+#### Performance-fence policy
+
+Use the cheapest fence that proves the claim:
+
+- **Deterministic fence** — In the concurrent functional suite, assert work/operation counts, virtual-clock transitions, queue/permit state, or another deterministic observable when it proves the claim. Preserve the workload's concurrency; do not serialize it to stabilize timing.
+- **Latency qualification** — A real-latency claim remains a controlled benchmark qualification, not a deterministic wall-clock test. Its Falsifier and Regression fence name the CI runner/resource class, build profile, warmup, exact repetitions, statistic, variance margin, workload concurrency, and execution mode (normal suite parallelism or an explicitly enforced dedicated lane). Calibrate the correct implementation under that intended CI contention; the Falsifier field links the calibration command, source/environment, sample results, and rationale for the threshold and variance margin. Preserve the approved latency bound and require the threshold to detect the named mutation. Missing calibration keeps the row `PENDING — <owner/step>`; an invented margin is not evidence.
+- **Evidence and readiness** — Assign setup and expected result to Falsifier, independent comparison/statistic to Oracle, regression mechanism to Named mutation, the permanent assertion or benchmark qualification and threshold to Regression fence, resource cost to Cost, and readiness to Status. Timeouts are hang guards, not latency evidence. Run declared repetitions as declared: record a failed qualification rather than retrying until green, widening the threshold with arbitrary slack, or ignoring a required qualification. A required unavailable environment, runner, lane, or setup remains `PENDING — <owner/step>`, never `N/A`. Plan entries reference this policy from `Complexity/production scale`, `Wall budget/phase`, and `Commands and expected results`; do not add a timing-specific template.
 
 ### 7. Run the cheapest falsifier
 
@@ -147,15 +172,15 @@ Run this checkable list before writing `design.md`:
 
 1. Every step-2 shape has a status: a claim row, an `N/A — approved risk` row recorded in the Approval list, or an `N/A — reason` carrying the contract's taxonomy.
 2. Every step-2 decision cell has a status: each variant of a classification predicate's domain together with the production conditions that arrive as that variant, each bound's raising knob or `N/A — approved risk` row, each accepting Resource for an offered control, every arm of a dispatch including the arms that refuse, and a verdict for each boundary-representation case step 2 enumerates.
-3. Every table row has every field filled, with `N/A — approved risk` in fence cells and in a bound's accepted-risk row, and `N/A — reason` in other conditional cells.
-4. Every falsifier names an independent oracle (contract definition).
-5. Every row with a fence names a mutation that would turn it red, named mechanically; every row with `Regression fence: N/A — approved risk` records `Named mutation: N/A — approved risk: no fence to mutate`, covered by the same Approval entry.
+3. Every table row has every field filled with the applicable value or explicit `N/A` defined by its field.
+4. Every falsifier records the lowest sufficient verification level; required independent comparisons and every bespoke tool's named gap are explicit.
+5. Every Named mutation cell contains a mechanical mutation or the ladder's justified `N/A`; fence-risk rows carry the matching `N/A — approved risk: no fence to mutate`.
 6. Every fence assertion satisfies the fence rule stated in the Falsification table's Regression fence field.
-7. Every falsifier's output identifies its own claim: if claim N fails, the oracle's output says claim N, not "something broke" — and a failing fence prints the state that decided it (the typed error, the returned value, the observed count) with diagnostics that cannot abort while unwinding. Split or merge rows until localization holds.
-8. Every measurement-based falsifier has a deterministic regression fence, or an approved `N/A — approved risk`.
+7. Every falsifier's output or review record identifies its own claim: if claim N fails, the result says claim N, not "something broke" — and a failing fence prints the state that decided it with diagnostics that cannot abort while unwinding. Split or merge rows until localization holds.
+8. Every measurement-based falsifier has a deterministic regression fence that proves the claim, a controlled benchmark qualification satisfying **Performance-fence policy**, or the explicit fence-risk acceptance defined in the Regression fence field; a required unavailable qualification remains `PENDING — <owner/step>`, not `N/A`.
 9. Every deferral phrase is classified with a verified tracker ID or a permanent-non-goal rationale.
-10. Every new capability has Owner, New seam, and Forbidden; every structural claim has a mechanical falsifier.
-11. When T2 records module shape, the inventory, alternatives, approved ledger, protected parents, shape claim, oracle, and mutation satisfy [module shape](references/module-shape.md); otherwise the section cites T2's `N/A`.
+10. Every new capability has Owner, New seam, and Forbidden; every structural claim has selected ownership verification.
+11. Every triggered Length review records its evidence and the requester's **Size stop** choice. When T2 records a module-shape change or the requester chose Reshape, the inventory, alternatives, approved ledger, protected parents, and selected verification satisfy [module shape](references/module-shape.md); otherwise the section cites T2's `N/A`.
 12. The cheapest falsifier has run and passed; no row has Status `FAIL`; every `PENDING` row names its discharge owner and step.
 
 Criterion: all twelve hold. A failed check means the design is wrong — fix it, do not waive it.
@@ -167,18 +192,18 @@ Criterion: all twelve hold. A failed check means the design is wrong — fix it,
 - **Route and inputs** — the step-1 extraction (route, behavior set, empirical premises, source pointers).
 - **Input shapes** — the step-2 enumeration of input shapes and decision cells, with statuses.
 - **Placement** — Owner, New seam, and Forbidden per capability.
-- **Module shape** — current cluster, alternatives, approved module ledger, protected parents, and shape fence; or `N/A —` T2 evidence.
+- **Module shape** — current cluster, alternatives, approved module ledger, protected parents, and selected ownership verification when the Design procedure ran; a **Length review** record with the requester's choice when its trigger applies; or `N/A —` T2 evidence.
 - **Claims** — the numbered claim list.
 - **Falsification** — the step-6 table.
 - **Non-goals and future work** — permanent non-goals with rationale; intended future work with verified tracker IDs.
 - **Falsifier run log** — the cheapest falsifier's command and result.
 - **Approval** — the step-11 record.
 
-Criterion: every section is populated; the table has no empty cells; the Module shape section satisfies its branch.
+Criterion: every section is populated; the table has no empty cells; the Module shape/Length-review section satisfies its branch.
 
 ### 11. Get requester approval
 
-Present the design to the requester: claims, placement, the Module shape ledger and protected parents when applicable, the Falsification table, non-goals, the cheapest falsifier's result, and every risk acceptance (each row carrying `N/A — approved risk`, whether a fence cell or a step-2 decision cell). Ask for approval in their own words.
+Present the design to the requester: claims, placement, the Module shape ledger and protected parents, any triggered **Length review**, the Falsification table, non-goals, the cheapest falsifier's result, and every risk acceptance (each row carrying `N/A — approved risk`, whether a fence cell or a step-2 decision cell). Ask for approval in their own words.
 
 Record in the Approval section:
 
@@ -192,7 +217,7 @@ Criterion: the Approval section contains the requester's dated, verbatim words a
 
 ## Hand-off
 
-[`budgeted-plan`](references/budgeted-plan.md) consumes a design satisfying the Output requirements below. [`checkpointed-build`](references/checkpointed-build.md) reads the Oracle, Named mutation, and Regression fence columns from the Falsification table. Their owner records corrections under [workflow contract](references/CONTRACT.md)'s **Approval semantics** and revalidates affected results under **Evidence validity**; changing an approved decision requires revision and re-approval.
+[`budgeted-plan`](references/budgeted-plan.md) consumes a design satisfying the Output requirements below. [`checkpointed-build`](references/checkpointed-build.md) reads the Oracle, Named mutation, and Regression fence columns from the Falsification table and applies **Performance-fence policy** for timing claims. Their owner records corrections under [workflow contract](references/CONTRACT.md)'s **Approval semantics** and revalidates affected results under **Evidence validity**; changing an approved decision requires revision and re-approval.
 
 ## Output
 
@@ -202,7 +227,7 @@ Criterion: the Approval section contains the requester's dated, verbatim words a
 - the cheapest falsifier run, with a `PASS` recorded in Status and the run log;
 - the non-goals/future-work section with the tracker taxonomy applied;
 - the placement decisions (Owner / New seam / Forbidden);
-- the approved module ledger, protected parents, and module-shape fence when T2 applies, or the evidence-backed `N/A`;
+- the approved module ledger, protected parents, and selected ownership verification when T2 applies, with the **Length review** record when its trigger applies, or the evidence-backed `N/A`;
 - the Approval section with the requester's verbatim words, the date, and the approved risk-acceptance list.
 
 If any of these is missing, the stage did not run.

@@ -1,6 +1,6 @@
 # Module shape
 
-Use this reference only when `route.md` records a module-shape change under T2. It makes responsibility ownership, interface depth, protected-parent growth, and their enforcement explicit without treating line count as architecture.
+Use this reference for T2's length-gate inspection or when `route.md` records a module-shape change or length-review trigger. It makes responsibility ownership, interface depth, protected-parent growth, and their enforcement explicit without treating line count as architecture.
 
 ## Trigger
 
@@ -9,10 +9,11 @@ Module shape applies when a change:
 - adds or moves a responsibility between modules;
 - introduces, removes, or changes a seam, interface, or dependency direction;
 - adds a new responsibility cluster to an orchestrator, facade, or other file that already owns several clusters;
-- splits, merges, or deletes a production module in a way that changes responsibility ownership or interfaces; or
-- creates a production module expected to accumulate substantial implementation.
+- splits, merges, or deletes a production module in a way that changes responsibility ownership or interfaces;
+- creates a production module expected to accumulate substantial implementation; or
+- reaches a length-review trigger defined below, including a threshold inherited from an earlier feature.
 
-A local change within an existing responsibility does not trigger module shape solely because its file is large or its implementation grows behind an unchanged interface.
+A local change within an existing responsibility stays Local despite its size or growth unless the requester answers a length-review trigger's **Size stop** with Reshape.
 
 ## Terms
 
@@ -20,9 +21,27 @@ A local change within an existing responsibility does not trigger module shape s
 - **Protected parent** — an existing file that may receive declarations or wiring but no new responsibility body.
 - **Module ledger** — the approved table of modules, interfaces, owned and forbidden responsibilities, adapters, and test surfaces. `falsifiable-design` owns it in `design.md`.
 - **Module growth ledger** — the slice-by-slice projection of responsibility, interface, and production-line changes. `budgeted-plan` owns it in `plan.md`.
-- **Module-shape fence** — a deterministic non-production oracle comparing the source tree and diff with the approved module ledger.
+- **Module-shape fence** — an optional automated tripwire for declared ledger violations, not proof of arbitrary source semantics.
 
 File and line counts are tripwires. They can expose concentration or plan drift; they do not prove depth and never justify pass-through splitting.
+
+## Length review
+
+A length threshold is a **review tripwire**, not a permanent architectural maximum. Review when the contract's **Size stop** trigger applies. Check inherited repository gates as well as the current growth ledger; a future feature uses its own projection, not the old feature's size assumptions. An observed overrun during implementation triggers the same review before further growth or gate changes.
+
+A **Length review** records: path, gate/policy owner and counting convention, baseline, current/projected size, threshold and margin, added feature/responsibility, and the requester's disposition. `change-workflow` records it in `route.md`'s T2 evidence when routing or Local work finds the trigger; `falsifiable-design` carries that record into `design.md`'s Module shape section, or records a later-found trigger there. The disposition comes from the contract's **Size stop**; present it before any redesign work:
+
+- **Retain and raise** — record the new threshold and growth rationale, preserving the ownership and dependency rules.
+- **Reshape** — run the Design procedure below on the affected module and candidate owners, assessing cohesion, interface depth, dependency direction, locality, and test surface against the new feature. Record the selected split or redesign (responsibilities, destination paths, interfaces, dependencies, tests through each seam), the resulting thresholds, and atomic migration slices; the redesign returns for approval with the design.
+- **Defer** — record the accepted overrun and the verified tracker ID for the reshape.
+
+`budgeted-plan` then updates affected projections/slices.
+
+Preserve useful comments, normal formatting, and readable code. Removing useful comments, packing statements, changing counting exclusions, or creating pass-through files merely to pass a length gate is not a disposition. Simplification must earn its place through better design independently of line savings. The checkpoint's Module shape receipt records a diff inspection for these evasions and resolves any found before `PASS`.
+
+Keep the threshold's scope, counting convention, rationale, and link to the approved review in the existing policy ledger (or the issue-local manifest when no shared gate exists). Gate diagnostics name the path, observed/projected size, threshold, and this review procedure so later features reach the same decision rather than treating the number as immutable.
+
+**Criterion:** every triggered threshold has the requester's recorded retain-and-raise, reshape, or defer choice, corresponding policy/plan updates, and passing affected shape checks before the checkpoint completes.
 
 ## Design procedure
 
@@ -80,25 +99,17 @@ For every protected parent, also record:
 
 **Criterion:** every responsibility has exactly one owner; every interface has a caller; every protected parent has a checkable exit condition; no module owns both sides of an approved seam.
 
-### 5. Define a mechanical shape claim
+### 5. Select structural verification
 
-Every ledger rule that can regress becomes a design claim. Its falsifier is a source/dependency/diff census, not reviewer intuition. The permanent fence SHOULD be an issue-local standalone oracle under `.<change-slug>/oracles/` and MAY use an issue-local data manifest when that keeps policy out of code. Where the repository already has a permanent gate — a shared entry point with its own policy ledger — the change extends it rather than forking it: a ticket-scoped copy, a repointed entry point, an orphaned ledger, or an unexplained change to a ceiling that gate owns is a policy change requiring the approved ledger and requester approval, not a build step. A change that brings a module to its ceiling updates that ceiling in the same change, recording the rationale in that ledger. The replacement fence reproduces the cases the previous fence's recorded runs covered, or names the case it drops and who approved that.
+For every applicable ledger rule, record a claim with its observable, covered paths/symbols, and selected evidence in the Falsification table. Default to available compiler visibility/dependency checks plus an explicit per-slice ownership self-check by the implementer, with independent help allowed, covering what those checks cannot enforce. Record its performer, any helper, revision, inspected paths, responsibility owners, forbidden responsibilities, protected-parent deltas, and result in the owning checkpoint record. The final isolated design-conformance review is authoritative; this self-check is not independent evidence and cannot replace it.
 
-The fence checks the applicable set of:
+Use an existing repository gate when it already owns the rule; extend its policy rather than forking a copy. A real ownership, visibility, or dependency violation is `FAIL`, not a reason to mark verification `N/A`. Gate changes follow `checkpointed-build`'s **Preserved enforcement** requirement; length thresholds follow **Length review**.
 
-- required and forbidden paths;
-- imports and dependency direction;
-- forbidden symbol ownership;
-- interface visibility or entry-point shape;
-- protected-parent production deltas;
-- required test locations; and
-- planned file-growth tripwires.
+A custom source-analysis gate needs a named concrete gap left by these checks/review and a separate design justification for automation. Bound it to the declared paths, symbols, dependencies, test locations, deltas, or thresholds. Reuse an established analyzer where one covers the gap; **never build a language parser solely to enforce a small feature's placement**. Keep accidental-placement tripwires scoped to accidental violations. An explicitly declared adversarial/security obligation requires its own detection coverage and cannot be narrowed by calling it a tripwire.
 
-It reports the claim ID and exact path/symbol/delta. It discovers the default/upstream branch through the workflow contract rather than hard-coding a branch. It never runs from production code or reads source text from a behavioral production test.
+An applicable fence reports the claim ID and exact path/symbol/delta, stays outside production code and behavioral production tests, and uses the contract's branch discovery. Select its mutation proof, or ordinary ownership-only `N/A` entries, through [`falsifiable-design`](references/falsifiable-design.md)'s **Verification ladder**; apply the contract's **Verification complexity stop** before further hardening.
 
-Each shape claim names a buggy source mutation such as moving a handler into a protected facade, importing a domain type into a transport adapter, widening an interface, or adding a hypothetical generic trait. The mutation must make the fence red; restoration returns it green.
-
-**Criterion:** every mechanical ledger rule has a claim, decisive oracle, applicable named mutation, and expected localized red output; judgement-only risks are explicit in requester approval.
+**Criterion:** every applicable ledger rule has concrete verification coverage and expected results; every custom gate has a named gap and separate design justification. Ordinary ownership self-check needs no bespoke fence or risk acceptance, and actual ownership violations remain blocking.
 
 ## Planning contract
 
@@ -108,14 +119,14 @@ Each slice records a **Module shape** field:
 - interface change;
 - owner after the slice;
 - protected parents touched and their expected production delta; and
-- exact module-shape fence command and expected result.
+- selected checks and scoped ownership self-check, or justified custom fence, with expected results.
 
 `plan.md` also carries the module growth ledger:
 
 | Module | Baseline production lines | Projected final lines | Responsibility change | Interface change | Protected-parent rule |
 |---|---:|---:|---|---|---|
 
-Numeric projections are tripwires with rationale. Exceeding one requires inspecting the responsibility and interface change: revise the plan when placement still holds; return to design and requester approval when it does not.
+Numeric projections are tripwires with rationale; approaching or exceeding them follows **Length review**, then the plan owner incorporates the approved disposition.
 
 **Criterion:** every slice preserves the approved ledger or completes an approved move atomically; every touched module appears in the growth ledger.
 
@@ -125,11 +136,11 @@ At each slice or bounded-repair checkpoint, establish these obligations with fre
 
 - actual paths, responsibilities, interfaces, and dependency direction match the approved ledger;
 - protected-parent deltas match the plan;
-- the module-shape fence passes;
-- every new or changed shape fence, or changed mutation applicability, has observed mutation red and restored green; otherwise valid mutation/restoration results are retained; and
+- the selected checks and scoped ownership self-check pass, including any applicable shared or custom gate;
+- applicable mutation/restoration proof satisfies the Verification ladder and Evidence validity; and
 - any deviation in responsibility ownership returns to `falsifiable-design` rather than being rationalized as plan drift.
 
-A numeric projection overrun with unchanged placement returns to `budgeted-plan`. A new responsibility, wider interface, different seam, or pass-through split returns to `falsifiable-design` and requester approval.
+Numeric growth triggers follow **Length review** even when placement is unchanged. A new responsibility, wider interface, different seam, or pass-through split likewise returns to `falsifiable-design` and requester approval.
 
 **Criterion:** module-shape gate is `PASS`, or `N/A — route and design record no module-shape change`; no placement deviation is deferred.
 
