@@ -115,6 +115,7 @@ Scan the request and existing spec (when one exists) and enter every unresolved 
 - Every behavior that cannot yet be written as a given/when/then triple.
 - Every success criterion that is not observable/falsifiable — a quantitative criterion without a number, unit, and method; a binary, structural, or security criterion without an exact condition and check.
 - Every edge dimension from the checklist below without a decision.
+- **Reference fidelity**, when the change ports, replaces, or reimplements existing behavior (a script, service, or prior implementation): which outputs must match the reference, and at which level — *byte-identical*, *semantically equal* (parsed values and order), or *functionally equivalent* (same observable outcomes) — and whether the port fixes or keeps defects the reference has.
 - Every ambiguity discovered during questioning, as answers cascade.
 
 A queue entry already decided by prior art is recorded directly as a Decisions row with the prior-art ID as rationale, and confirmed at sign-off, rather than re-asked.
@@ -123,7 +124,7 @@ A queue entry already decided by prior art is recorded directly as a Decisions r
 
 ### 4. Ask one highest-leverage question at a time
 
-Ask the queue entry whose answer eliminates the most downstream questions — usually the role ("who is this for, by role") first, since pinning it collapses other ambiguities. Ask one question per message, closed-form where possible:
+Ask the queue entry whose answer eliminates the most downstream questions — usually the role ("who is this for, by role") first, since pinning it collapses other ambiguities; then reference fidelity when present, since it decides how every later behavior is verified. Ask one question per message, closed-form where possible:
 
 - Not: "Tell me about how this should work for archived messages."
 - Yes: "Are archived messages included in the unread count? Yes or no."

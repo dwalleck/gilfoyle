@@ -23,6 +23,7 @@ Single-owner rules:
 - [`change-workflow`](references/change-workflow.md) exclusively owns routes.
 - [`checkpointed-build`](references/checkpointed-build.md) exclusively judges slice and bounded-repair verification. Run one checkpoint per completed atomic change, never per unit-test cycle; the artifact owner incorporates its result into the owning slice or repair record.
 - [`prove-it-prototype`](references/prove-it-prototype.md) never writes a design doc. [`change-workflow`](references/change-workflow.md) never runs downstream gates.
+- **Amend in place.** When a decision or result changes, rewrite the owning section to the current state; version control holds what it replaced, so active sections read as the current contract. A requester's words are quoted once, in the artifact that owns the decision; other artifacts cite that section. Evidence figures and hashes live in the evidence record of the revision that produced them, replaced when superseded.
 
 ## Artifact directory resolution
 
@@ -53,7 +54,7 @@ Revalidate conclusions affected by a changed production path, fence, fixture, or
 | Empirical probe | The external/system premise still holds; repeat the probe only when its verified premise or supporting evidence is invalidated. |
 | Independent review | The reviewed behavior, ownership, interfaces, dependencies, and assumptions still cover the delivered change. |
 
-An invalidated result remains historical evidence, not a current `PASS`. Name the responsible verifier and required check; completion waits for its result. Use `N/A — reason` only for an inapplicable obligation, never for unavailable, deferred, failed, or stale proof. A retained `PASS` is still `PASS`, with its evidence link and applicability reason.
+An invalidated result is no longer a current `PASS`; under **Amend in place** its gate shows the required check, not the old result. Name the responsible verifier and required check; completion waits for its result. Use `N/A — reason` only for an inapplicable obligation, never for unavailable, deferred, failed, or stale proof. A retained `PASS` is still `PASS`, with its evidence link and applicability reason.
 
 Evidence for a run that can silently skip — an environment gate, an ignored test, an early return, a missing prerequisite — carries a receipt proving the assertion executed; a prose sentence is not evidence for a row that did not run. Every figure, count, and head label in a record is anchored to the revision that produced it.
 
@@ -106,6 +107,7 @@ The requester may choose another path. The owning artifact records the evidence 
 ## Approval semantics
 
 - User decisions are required only for specification, scope, architecture, or explicit risk acceptance.
+- **Delegated approval** — a requester may delegate routine sign-offs: spec and design approval, and recommended decisions an approved claim or obligation already constrains. Record each as `DG` with the delegation quoted, never as the requester's own words. Delegation stops short of **reserved decisions**, which reach the requester as a question however broad the delegation: the **Size stop**; the **reference fidelity** decision; any `N/A — approved risk`; an interrogated-spec refusal trigger, including a request that bundles separate features; and raising a requester-set attempt or review cap. A delegation that names one of these in its own words covers that one only.
 - Agents diagnose and repair implementation and tool failures when the approved contract already determines the answer. The artifact owner records technical corrections to verification commands, paths, fixtures, or mutation mechanisms without renewed approval when approved behavior, oracle meaning, architecture, and accepted risk remain unchanged; revalidate affected evidence under Evidence validity. An established repository quality requirement or an existing approved obligation can determine a technical correction without a separate design claim for that correction; cite that requirement or obligation.
 - Changes to approved behavior, responsibility ownership, interfaces, architecture, oracle meaning, or accepted risk return to the owning specification/design stage for approval. A repair whose correct outcome is not determined by an approved claim or established obligation also returns there; missing incidental detail alone is not a new design decision.
 - Approaching or exceeded size thresholds follow the **Size stop** before any refactor, partition, gate change, or plan-only budget update, including when placement is unchanged. This trigger takes precedence over plan-only repair routing.
