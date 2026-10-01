@@ -41,6 +41,8 @@ Preserve useful comments, normal formatting, and readable code. Removing useful 
 
 Keep the threshold's scope, counting convention, rationale, and link to the approved review in the existing policy ledger (or the issue-local manifest when no shared gate exists). Gate diagnostics name the path, observed/projected size, threshold, and this review procedure so later features reach the same decision rather than treating the number as immutable.
 
+A self-set threshold is the projection's upper bound plus its margin, set by `budgeted-plan`'s projection method. A threshold the workflow set for itself — a growth-ledger projection, or a Length review threshold no repository gate owns — is a review trigger, not a build gate. Fences check structural ledger rules; a self-set threshold is compared at each checkpoint through the growth ledger's **Actual lines** column, a crossing is a **Size stop** for the requester, and the checkpoint's Module shape item waits on the recorded choice. Only a repository-owned gate reports `FAIL`.
+
 **Criterion:** every triggered threshold has the requester's recorded retain-and-raise, reshape, or defer choice, corresponding policy/plan updates, and passing affected shape checks before the checkpoint completes.
 
 ## Design procedure
@@ -105,7 +107,7 @@ For every applicable ledger rule, record a claim with its observable, covered pa
 
 Use an existing repository gate when it already owns the rule; extend its policy rather than forking a copy. A real ownership, visibility, or dependency violation is `FAIL`, not a reason to mark verification `N/A`. Gate changes follow `checkpointed-build`'s **Preserved enforcement** requirement; length thresholds follow **Length review**.
 
-A custom source-analysis gate needs a named concrete gap left by these checks/review and a separate design justification for automation. Bound it to the declared paths, symbols, dependencies, test locations, deltas, or thresholds. Reuse an established analyzer where one covers the gap; **never build a language parser solely to enforce a small feature's placement**. Keep accidental-placement tripwires scoped to accidental violations. An explicitly declared adversarial/security obligation requires its own detection coverage and cannot be narrowed by calling it a tripwire.
+A custom source-analysis gate needs a named concrete gap left by these checks/review and a separate design justification for automation. Bound it to the declared paths, symbols, dependencies, test locations, or protected-parent deltas; numeric thresholds stay with the checkpoint's growth ledger. Reuse an established analyzer where one covers the gap; **never build a language parser solely to enforce a small feature's placement**. Keep accidental-placement tripwires scoped to accidental violations. An explicitly declared adversarial/security obligation requires its own detection coverage and cannot be narrowed by calling it a tripwire.
 
 An applicable fence reports the claim ID and exact path/symbol/delta, stays outside production code and behavioral production tests, and uses the contract's branch discovery. Select its mutation proof, or ordinary ownership-only `N/A` entries, through [`falsifiable-design`](references/falsifiable-design.md)'s **Verification ladder**; apply the contract's **Verification complexity stop** before further hardening.
 
@@ -121,12 +123,7 @@ Each slice records a **Module shape** field:
 - protected parents touched and their expected production delta; and
 - selected checks and scoped ownership self-check, or justified custom fence, with expected results.
 
-`plan.md` also carries the module growth ledger:
-
-| Module | Baseline production lines | Projected final lines | Responsibility change | Interface change | Protected-parent rule |
-|---|---:|---:|---|---|---|
-
-Numeric projections are tripwires with rationale; approaching or exceeding them follows **Length review**, then the plan owner incorporates the approved disposition.
+`plan.md` also carries the module growth ledger, built and projected by [`budgeted-plan`](references/budgeted-plan.md) step 4. Numeric projections are tripwires with rationale; approaching or exceeding them follows **Length review**, then the plan owner incorporates the approved disposition.
 
 **Criterion:** every slice preserves the approved ledger or completes an approved move atomically; every touched module appears in the growth ledger.
 
