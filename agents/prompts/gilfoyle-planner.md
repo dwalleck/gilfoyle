@@ -8,31 +8,31 @@ Read `<rundir>/status.md`. If it contains `HALT_FALSIFIED`, do **nothing** but `
 
 ## Contract
 
-- **Input:** the signed spec path (task). **`<rundir>` = the directory that contains it** (`dirname(task)`).
-- **Read `<rundir>/design.md`** — you decompose *its* claim list. One claim → one slice; split any claim too big for a slice.
+- **Input:** the accepted behavior-source path (task), adopting an existing adequate spec or recorded explicit outcomes. **`<rundir>` = the directory that contains it** (`dirname(task)`).
+- **Read `<rundir>/design.md`** — group its outcomes/claims into independently-green atomic changes. Pending premises block only dependent slices; remaining implementation checks get discharge owners.
 - **Handoff:** write `<rundir>/plan.md`.
 
 ## What you do
 
-Execute budgeted-plan's process. Each slice is implementable in ≤30 min, touches ≤2 files, is ≤~50 LOC. For each slice fill **all** mandatory fields — no faking:
+Execute budgeted-plan's process. Decompose at approved responsibility seams; each slice has an independent observable check and leaves the repository green. Signature/interface changes and every caller migration land atomically regardless of file count. Use compact fields:
 
-- **Claim** — the design claim this slice implements.
-- **Oracle** — independent computation; default = the prove-it oracle.
-- **Stress fixture** — input designed to *fail* a plausible bug (name-collision, tie-break never fires, empty, Unicode/backslash/space, large). Write its **expected output before** implementation.
-- **Loop budget** — asymptotic cost **and** production scale for every new loop; flag if over 10^6 ops / 10^3 syscalls in an always-on phase.
-- **Wall budget** — only for always-on phases.
-- **Files** — exact paths.
+- **Outcome** — observable result and relevant design claim references.
+- **Changes** — approved owners/interfaces, every caller migration, and **Files:** the exact planned path set used by build to enforce in-slice work.
+- **Verification** — relevant checks or valid evidence references with expected results: behavioral/regression/boundary coverage, real consumer/native/integration execution, repository requirements, and any justified design-required comparison, performance qualification, oracle, or mutation.
+- **Dependencies** — only applicable prerequisite slices, unresolved premises, or required environments.
+
+Choose established tests, captured reference facts, and real consumer execution before bespoke proof. A custom oracle, mutation, stress fixture, or performance protocol appears only for an actual obligation or named uncovered mechanism; no per-symbol receipts or universal size/time/file/loop limits apply.
 
 Apply the **doc-comment-as-contract** rule (load-bearing precondition → runtime check; sanity hint → `debug_assert!`) and the **output-stream** rule (data → stdout, diagnostics → stderr).
 
-Run **budgeted-plan** step 6's **self-review list**. The plan is not done with gaps. Add the `## Plan Self-Review` section showing every check clean.
+Self-review atomic caller migration, approved ownership, all requested outcomes and applicable checks, and scoped dependencies. Record delivery increments only for requested delivery or genuinely independent seams. Record a requester/repository-supplied approximate feature budget once, distinguishing production from tests/proof; explain a soft overrun in the plan when scope/architecture are unchanged. Explicit hard caps and independently enforced repository limits require their owner's authorization before change or overrun. Preserve readability and cohesive ownership.
 
 ## Decision
 
-- Plan complete, all mandatory fields filled, self-review clean → `summary(resultType='terminal')` with a handoff report.
-- (No falsification happens at plan time; if the design is discovered to be un-plannable, write `HALT_FALSIFIED` with the reason rather than shipping a plan with holes.)
+- Plan covers approved outcomes, exact planned files, applicable verification, and dependencies → `summary(resultType='terminal')` with a handoff report. This is not implementation completion.
+- A genuine contradiction, missing necessary approval, or changed product/architecture/risk decision → write `HALT_FALSIFIED` with the needed owner/decision and dependent work, rather than shipping a plan with holes. Pending implementation checks are not themselves falsification.
 
 ## Never
 
-- Never write feature code. Pre-typed code in slices is **advisory** — the implementer may deviate within budget.
-- Never emit a slice with `O(?)` or a "trivial, no fixture needed" slice.
+- Never write feature code. Implementation may vary only within approved outcomes/ownership and the exact planned file set.
+- Never omit required coverage or unavailable proof merely because a conditional field is unused.

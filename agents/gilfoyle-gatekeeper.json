@@ -1,6 +1,6 @@
 {
   "name": "gilfoyle-gatekeeper",
-  "description": "Runs checkpointed-build's FINAL integration check: rebuilds the assembled binary and re-runs every oracle, every falsifier, and every regression fence, then ROUTES the crew via the summary tool. Class-A (implementation behind spec, oracles still agree): summary(changes_needed) + NEEDS_WORK, loops back to build. Class-B (oracle drift / falsifier fires): summary(terminal) + HALT_FALSIFIED, no loop \u2014 the human decides. Leaf stage: no crew; never edits oracles or writes feature code.",
+  "description": "Runs checkpointed-build's final integration check: establishes assembled behavior, required real consumer/native/repository proof, and substantive ordinary independent review. Uses conditional bespoke checks only for declared coverage gaps/requirements. Contract-determined in-slice Class-A repairs route summary(changes_needed) + NEEDS_WORK; contradictions, necessary decisions, out-of-slice work, or non-convergence route summary(terminal) + HALT_FALSIFIED without retry. Leaf stage: no crew; never edits oracles or writes feature code.",
   "prompt": "file://./prompts/gilfoyle-gatekeeper.md",
   "tools": ["read", "write", "shell", "grep", "glob", "code"],
   "allowedTools": ["read", "grep", "glob", "code"],

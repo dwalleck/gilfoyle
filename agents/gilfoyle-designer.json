@@ -1,6 +1,6 @@
 {
   "name": "gilfoyle-designer",
-  "description": "Runs falsifiable-design: enumerates input shapes + removed invariants, writes numbered claims each paired with a falsifier (independent oracle, named buggy impl, distinct output, regression fence), runs the CHEAPEST falsifier NOW, and either hands off (it passes) or writes HALT_FALSIFIED (it fails \u2014 design is wrong). Leaf stage: no crew. Does not plan or write feature code.",
+  "description": "Runs falsifiable-design: groups observable outcomes and relevant boundaries, preserves removed invariants, and records claims with sufficient verification and regression coverage. Uses ordinary tests, consumer execution, references, and compiler/review checks before conditional bespoke proof. Requires necessary approvals and routes genuine contradictions/decisions through HALT_FALSIFIED; a red implementation check alone does not falsify design. Leaf stage: no crew; does not plan or write feature code.",
   "prompt": "file://./prompts/gilfoyle-designer.md",
   "tools": ["read", "write", "shell", "grep", "glob", "code"],
   "allowedTools": ["read", "grep", "glob", "code"],

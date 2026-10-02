@@ -1,51 +1,50 @@
 # gilfoyle
 
-A workflow skill for building software that is *right*, not fast. The premise is that most of the bugs you ship come from process disciplines that audit themselves rather than reaching outside the design document to compare against reality.
+A workflow skill for building software that is right in real use. Define consumer-visible outcomes, resolve consequential unknowns, and verify delivery with evidence proportional to the change.
 
-Gilfoyle forces the reach.
+Gilfoyle makes required verification explicit without turning every change into a new proof framework.
 
 ## What we ship
 
 - Reliable software.
-- Software whose claims have been falsified before they were committed to.
-- Software whose loops have asymptotic budgets stated in writing before any code was typed.
-- Software whose tests are anchored to an independent oracle, not to an imagined model of the system.
+- Software whose requested outcomes, compatibility, and safety boundaries are clear.
+- Software verified through relevant behavioral tests, real consumer execution, and applicable repository checks.
+- Software whose remaining uncertainty and required proof are explicit, not hidden behind a green label.
 
 ## What we don't ship
 
 - Fast software, at the cost of being wrong about what it does.
 - Plans that audit themselves.
-- Test suites whose fixtures are too small to surface the bugs the production data has.
-- Features whose first encounter with reality is the smoke test at the end of the plan.
+- Tests that miss plausible consumer-visible bugs or important boundaries.
+- Features built on consequential premises that nobody established.
 - "It works on my fixture" as a synonym for "it works."
 
 ## The philosophy, briefly
 
-The standard software loop is: brainstorm → plan → execute → test → ship. Every gate in that loop is internal to the design document. The document audits itself. The plan audits the document. The implementation audits the plan. The tests audit the implementation. Nothing audits *the whole thing* against the system it's actually running on, until the very end, when fixing anything is expensive.
+The standard software loop is: brainstorm → plan → execute → test → ship. It can become self-confirming when each document or check merely repeats the implementation's assumptions. Gilfoyle anchors the work to requested outcomes and evidence that can expose a real failure.
 
-This suite reorders the work into a spiral whose every iteration ends with the binary touching reality and an independent oracle confirming what it produced. The unit of work is not a task. It is a *hypothesis with a named falsification experiment*. Slices replace tasks. Drift between binary and oracle is a stop condition, not a "fix later" item.
+The route determines the work. Reuse valid documentation, source, tests, and observations; investigate only consequential facts they do not answer. Deliver independently-green atomic slices with compact records, using ordinary verification first. Add custom machinery only for a named coverage gap or an explicit requirement, and stop the affected work when a required check fails.
 
 ## The loop
 
-```
-interrogated-spec   →  every behavior observable, every criterion measurable
-       ↓ (gate: requester signs off in their own words)
-prove-it-prototype  →  oracle established, probe matches
-       ↓ (gate: probe ↔ oracle)
-falsifiable-design  →  every claim has a falsifier
-       ↓ (gate: cheapest falsifier passes)
-budgeted-plan       →  slices with budgets + stress fixtures
-       ↓ (gate: every loop budgeted, every fixture adversarial)
-checkpointed-build  →  per-slice: implement, recheck oracle, recheck budget
-       ↓ (per-slice gate: oracle matches, budget holds)
+```text
+change-workflow     →  select Local, Structural, or Empirical
        │
-       ├─→ tdd-scoped              →  unit tests inside a slice, then BUDGET + ORACLE gates
+       ├─ Local     →  normal repository fix/TDD + relevant verification
        │
-       └─→ assessing-review-feedback (when review feedback arrives)
-                                   →  per-finding: verify, evaluate, accept / modify / reject
+       └─ Structural / Empirical, as applicable:
+          interrogated-spec   →  resolve material outcome/scope decisions
+          prove-it-prototype  →  answer specific unresolved factual premises
+          falsifiable-design  →  claims with sufficient verification
+          budgeted-plan       →  compact independently-green slices
+          checkpointed-build  →  implement and verify each atomic change
+                 └─ tdd-scoped → focused behavioral RED / GREEN / REFACTOR
+
+review feedback    →  assessing-review-feedback takes entry precedence
+                      verify each finding, then accept / modify / reject
 ```
 
-The selected route determines which gates apply: requester decisions, empirical premise evidence, falsifiable design, budgeted planning, and implementation verification. Each checks an obligation outside the document. The [workflow contract](skills/gilfoyle/references/CONTRACT.md#evidence-validity) defines when prior evidence remains valid and when changed assumptions require fresh verification.
+The selected route determines the applicable stages; already-settled behavior and valid evidence are retained. The [route selection](skills/gilfoyle/references/change-workflow.md#route-selection) and [workflow contract](skills/gilfoyle/references/CONTRACT.md#evidence-validity) own applicability and evidence reuse.
 
 `assessing-review-feedback` applies the same discipline to incoming comments: verify the bug claim and evaluate the fix separately. Repairs within approved claims use a [compact repair record](skills/gilfoyle/references/assessing-review-feedback.md#compact-repair-record) and scoped verification; changed approved decisions return for approval, and changed planning inputs receive affected-only updates.
 
@@ -55,45 +54,29 @@ The selected route determines which gates apply: requester decisions, empirical 
 
 | Stage | Replaces | Purpose |
 |---|---|---|
-| `interrogated-spec` | (nothing — this is new) | Grill the requester one question at a time until every vague noun is resolved, every success criterion is measurable, every edge has a decision, and the requester has signed off in their own words. |
-| `prove-it-prototype` | (nothing — this is new) | Establish missing or invalidated empirical premises with a real-system probe and independent oracle; retain valid premise evidence. |
-| `falsifiable-design` | brainstorming | Produce a design where every claim is paired with an experiment that would prove it wrong; cheapest falsifier runs before approval. |
-| `budgeted-plan` | writing-plans | Decompose new work into independently verifiable slices with applicable budgets and fixtures; amend only affected planning inputs on review re-entry. |
-| `checkpointed-build` | executing-plans | Verify slices and bounded repairs, then establish assembled quality, platform, and integration proof. |
-| `tdd-scoped` | test-driven-development | Prove changed behavior red/green and check changed complexity locally; checkpoints own the broader evidence. |
+| `interrogated-spec` | (nothing — this is new) | Resolve only material behavior, compatibility, scope, safety, and risk decisions; pin observable outcomes and obtain applicable approval. |
+| `prove-it-prototype` | (nothing — this is new) | Answer a specific consequential factual uncertainty from valid sources or the smallest necessary observation; block only dependent work. |
+| `falsifiable-design` | brainstorming | Group outcome claims and plausible introduced failures, choose sufficient verification, and approve the relevant design decisions. |
+| `budgeted-plan` | writing-plans | Plan atomic slices with Outcome, Changes, Verification, and applicable Dependencies; record supplied feature budgets and delivery decisions once. |
+| `checkpointed-build` | executing-plans | Verify delivered behavior per atomic change, then establish assembled consumer, native/platform, repository, and independent-review proof. |
+| `tdd-scoped` | test-driven-development | Cover new/fixed behavior with focused tests and real defect sensitivity; broader verification stays at the checkpoint. |
 | `assessing-review-feedback` | (nothing — this is new) | Verify and decide each finding; group approved-contract repairs atomically in the existing decision surface. |
 
-## The rules, condensed
+## Evidence and completion
 
-0. **Pin unresolved behavior.** Resolve observable behavior before probing or designing. Reuse explicit behavior and approved decisions rather than interrogating them again.
-
-1. **Empirical design needs valid premise evidence.** Probe an unverified or invalidated premise before relying on it. Structural and Local routes do not manufacture empirical work.
-
-2. **No probe without an oracle.** An oracle is an independent computation of the same answer using a different mechanism. If the probe matches its own logic, you've proven nothing.
-
-3. **No claim without a falsifier.** A claim that can't be proven wrong is a wish. We don't plan against wishes.
-
-4. **No loop without a budget.** Every loop in the plan states its asymptotic cost AND its production scale, before any code is written.
-
-5. **No fixture without a bug to design against.** Happy-path fixtures confirm what you already believe. We pair every happy-path fixture with one designed to fail under a plausible bug.
-
-6. **No precondition without an assertion.** "Callers must X" in a doc comment without `debug_assert!(X)` in the code is a lie.
-
-7. **Every slice or repair has a checkpoint.** Verify affected behavior against its applicable obligations, retain valid evidence by reference, and stop on unresolved failures. Writer-local proof does not replace assembled integration.
-
-8. **No "fix it later."** Drift caught at slice N is cheap. Drift caught at slice N+8 is the entire feature. We stop at slice N.
-
-9. **No ceremony for ceremony's sake.** TDD is a tool. We use it for what it's good at. We do not pretend it's a substitute for verification against reality.
-
-10. **Completion requires current evidence.** The final assembled state satisfies every applicable behavioral, quality, platform, and integration obligation, with independent structural review when required. Historical green results count only when they still prove that state.
-
-11. **Dogfood the static-analysis tools available to you.** Before changing a function's signature, name, or semantics: list its callers with whatever impact-analysis tool you have (project-local code-intelligence binary, IDE find-usages, `grep`). The list bounds the change's blast radius. Treat the tool's output as a hint generator, not an oracle — verify with `grep` when stakes are high.
+- **Outcomes first.** The [pinned bar](skills/gilfoyle/references/interrogated-spec.md#the-pinned-bar) distinguishes requested behavior from implementation choices.
+- **Ordinary verification first.** The [verification ladder](skills/gilfoyle/references/falsifiable-design.md#verification-ladder) starts with behavioral tests, real consumer execution, and representative captured references. Custom oracles, live differential/fuzz machinery, and additional mutations are conditional on a named uncovered mechanism or repository requirement.
+- **Real bugs need sensitivity.** [Mutation sensitivity](skills/gilfoyle/references/falsifiable-design.md#mutation-sensitivity) owns failing-before/passing-after proof and its bounded alternative; coverage-only work does not invent a red state.
+- **Compact delivery records.** [Compact slices](skills/gilfoyle/references/budgeted-plan.md#3-write-compact-slices) define the work; the [checkpoint](skills/gilfoyle/references/checkpointed-build.md#the-gate--stated-once) records delivered behavior, performed checks/results, and unresolved failures once.
+- **Analyze and migrate callers.** [Impact analysis and reuse](skills/gilfoyle/references/checkpointed-build.md#1-impact-analysis-and-reuse) uses symbol-aware references with text-search safety nets before signature, name, or semantics changes; affected callers migrate atomically.
+- **Required proof remains required.** The [final integration check](skills/gilfoyle/references/checkpointed-build.md#final-integration-check) owns assembled repository gates, real consumer/native proof, and substantive independent review. [Design-conformance review](skills/gilfoyle/references/module-shape.md#final-design-conformance-review) makes isolated reconstruction conditional, not automatic.
+- **Budgets follow their authority.** [Size stop](skills/gilfoyle/references/CONTRACT.md#size-stop) governs supplied soft feature budgets and explicit requester/repository hard limits. Readability, cohesive ownership, and required gate authority are preserved.
 
 ## When to use this suite
 
-When you are adding a feature on top of a system whose behavior you can observe but did not personally write. Which is most of the time.
+Use Gilfoyle for nontrivial changes to existing software, including changes where ownership, compatibility, scale, or external-system behavior could surprise you. Local changes use normal repository fix/TDD and focused verification; Structural and Empirical routes disclose only their applicable stages.
 
-If you are writing a small utility from scratch with no underlying system to depend on, this is overkill. Run TDD on its own. If you are extending tethys, rivets, the Linux kernel, your customer's database, anything where the system can surprise you — this is the loop.
+Trivial typos, formatting, and documentation-only edits use the repository's normal focused process.
 
 ## Voice
 
@@ -158,7 +141,7 @@ Build the thing. Check it against reality. Stop when drift appears. Ship when it
 
 ## Running the loop autonomously (Kiro)
 
-The stage documents above are the methodology. `agents/` + `crew-dag-loop.json` package it as an autonomous [Kiro CLI](https://kiro.dev) crew: after you sign off on the spec (the one human gate), a five-stage DAG — probe → design → plan → build ⇄ gate — runs unattended and **stops the moment a claim is falsified**, surfacing which leg (implementation / oracle / design / substrate) is implicated for you to adjudicate.
+The stage documents above are the methodology. `agents/` + `crew-dag-loop.json` package it as an autonomous [Kiro CLI](https://kiro.dev) crew: after the applicable spec sign-off, a fixed five-stage DAG — probe → design → plan → build ⇄ gate — runs with a bounded implementation-repair loop. Its fixed roles do not make optional evidence machinery mandatory; contract/reference/substrate contradictions or repairs outside the approved slice halt for adjudication.
 
 The Kiro install step copies `agents/` into `.kiro/agents/`, the unified skill from `skills/gilfoyle` into `.kiro/skills/gilfoyle`, and `crew-dag-loop.json` alongside as a reference.
 

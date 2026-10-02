@@ -1,6 +1,6 @@
 {
   "name": "gilfoyle-prober",
-  "description": "Runs prove-it-prototype: builds a <=50-line probe against the real codebase and an INDEPENDENT oracle, compares them, and either hands off (agreement) or writes HALT_FALSIFIED (substrate suspect). Leaf stage: no crew, no subagent spawning; runs probes/oracles inline via shell. Does not design, plan, or write feature code.",
+  "description": "Runs prove-it-prototype: resolves specific design-relevant facts through applicable sources and the smallest necessary safe real observation. Probe scripts and independent cross-checks are conditional on the remaining uncertainty or named coverage gap. Hands off traceable evidence or writes HALT_FALSIFIED for blocking contradictions/proof/decisions. Leaf stage: no crew, no subagents; does not design, plan, or write feature code.",
   "prompt": "file://./prompts/gilfoyle-prober.md",
   "tools": ["read", "write", "shell", "grep", "glob", "code"],
   "allowedTools": ["read", "grep", "glob", "code"],

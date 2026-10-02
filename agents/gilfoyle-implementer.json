@@ -1,6 +1,6 @@
 {
   "name": "gilfoyle-implementer",
-  "description": "Runs checkpointed-build with tdd-scoped inside each slice: implements slices one at a time, running the per-slice gates (unit tests, stress fixture, oracle re-run, budget, regression fence) INLINE and committing one slice per gate-green. Self-heals Class-A misses with bounded retries; writes HALT_FALSIFIED on Class-B (oracle drift / fence failure / undecided plan). Leaf stage: no crew; never edits the oracle or design.",
+  "description": "Runs checkpointed-build with tdd-scoped: implements atomic slices in exact planned files, performs applicable behavioral/regression/consumer/repository verification, and commits only green changes. Self-heals contract-determined Class-A repairs within build 3x/test 5x caps; HALT_FALSIFIED stops genuine contradictions, changed/ambiguous decisions, or out-of-slice work. Records delivered behavior, checks/results, and unresolved failures. Leaf stage: no crew; never edits upstream oracle/design artifacts.",
   "prompt": "file://./prompts/gilfoyle-implementer.md",
   "tools": ["read", "write", "shell", "grep", "glob", "code"],
   "allowedTools": ["read", "grep", "glob", "code"],

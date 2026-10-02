@@ -1,91 +1,69 @@
 # change-workflow
 
-Route first. Every downstream stage consumes the route; none re-derives it. Read [workflow contract](references/CONTRACT.md) before writing anything — it owns artifact names, directory resolution, gate states, and the definitions used here.
-
-A change takes exactly one of three routes. The route decides which evidence the change must carry; the gates that check that evidence live in the owning stages and are never restated here. This routing stage depends on nothing downstream: routing reads only the change request, the repository, and [workflow contract](references/CONTRACT.md).
+Route first. Read [workflow contract](references/CONTRACT.md) for artifact ownership, evidence validity, approval, and directory resolution. Routing reads the request, repository facts, and contract; downstream stages own their gates.
 
 ## The three routes
 
-- **Local** — behavior explicit; no unverified external or system premise; no public API, schema, or module-shape change; no responsibility moves between modules; no production-scale risk. A change within one existing responsibility remains Local even when its file is large. Normal repository fix/TDD plus focused behavioral verification; `route.md` is the only artifact.
-- **Empirical** — a design premise depends on existing-system or external behavior not covered by current applicable evidence. Sequence: interrogate unresolved behavior → probe/oracle evidence → design approval → plan → checkpointed build.
-- **Structural** — every non-Local change without an unverified empirical premise: public API/schema changes, module-shape or dependency-direction changes, responsibility moves, new behavior in a multi-responsibility orchestrator/facade, or production-scale risk. Sequence: interrogate unresolved behavior → design approval → plan → checkpointed build.
+- **Local** — explicit behavior within existing responsibility, no unresolved consequential external premise, no public interface/schema/ownership change, and no material production-scale risk. Use normal repository fix/TDD, focused behavioral verification, real consumer execution, and applicable repository checks; `route.md` is the only workflow artifact.
+- **Empirical** — a specific unresolved existing-system/external fact could change design. Resolve it from existing evidence or the smallest necessary observation, then design, plan, and checkpoint the change. Only work dependent on the fact waits; unrelated settled decisions/evidence remain usable.
+- **Structural** — a non-Local change without an unresolved empirical premise: public interface/schema, ownership/dependency changes, new responsibility clusters, material scale risk, or unresolved product decisions. Interrogate material behavior when needed, then design, plan, and checkpoint.
 
 ## Route selection
 
-Answer all four tests against the change request and the repository, and record every verdict with its evidence in `route.md`. Then apply precedence: Empirical > Structural > Local; the first test in precedence order that fires selects the route.
+Record all four tests with evidence and apply precedence Empirical > Structural > Local:
 
-1. **T1 Empirical premise** — Does any design premise depend on existing-system or external behavior not covered by valid evidence under [workflow contract](references/CONTRACT.md)'s **Evidence validity** rule? Applicable evidence may be current repository evidence or an existing `evidence.md`. Missing or invalidated → **Empirical**. The evidence row names the premise and the result covering it, or why new verification is required.
-2. **T2 Structural module shape** — Does the change alter a public interface, schema, seam, dependency direction, or responsibility owner; split, merge, or delete a production module in a way that changes ownership or interfaces; create a production module expected to accumulate substantial implementation; or add a responsibility cluster to an orchestrator, facade, or other multi-responsibility file? A shape change → YES → **Structural**. Also inspect applicable file-length gates and growth-ledger thresholds: read [module shape](references/module-shape.md)'s **Length review** when one exists and check its trigger against current size and projected feature growth. A length-review trigger runs the contract's **Size stop** here, before route selection: **Reshape** → YES → **Structural**; **Retain and raise** or **Defer** leaves T2 to the shape question alone. Record the affected modules, their current responsibilities and interfaces, candidate owners, any protected parent, threshold evidence, and any Size stop choice. Size or growth below every trigger can remain Local.
-3. **T3 Production-scale risk** — Does the change carry production-scale risk: latency, throughput, memory, concurrency, or data volume? YES → **Structural**; record why — budget and stress-fixture machinery is required, and Local has none.
-4. **T4 Explicit behavior** — Is the requested behavior fully explicit: observable given/when/then with no unresolved decisions? NO → **Structural**; record why — interrogation is required, and Local has none. When the verdict is yes, the evidence row records the complete observable behavior contract as given/when/then triples — the behavior source for [`falsifiable-design`](references/falsifiable-design.md) when `spec.md` is `N/A`.
+1. **T1 Empirical premise** — Is there a specific unresolved fact about existing-system/external behavior whose answer could change design? Documentation, source, current tests, and valid previous observations can answer it. Name the question and dependent choice, not a generic need to investigate. Selecting/approving a library alone does not establish unspecified runtime behavior, and does not trigger global requalification. A genuine unresolved fact → Empirical.
+2. **T2 Structural module shape** — Does the change alter a public interface/schema, seam, dependency direction, or responsibility owner; change ownership through a module split/merge/deletion; introduce substantial new module ownership; or add a responsibility cluster to an orchestrator/facade? Yes → Structural. Record affected owners/interfaces and relevant protected parents. A large file or growth within an existing owner alone does not change the route. Inspect actual requester/repository limits; read [module shape](references/module-shape.md)'s Length review when a relevant limit exists. Soft feature budgets need no module projections or requester tripwire; hard existing gates retain their authority under Size stop.
+3. **T3 Production-scale risk** — Is there a concrete material latency, throughput, memory, concurrency, or volume risk introduced by this change? Yes → Structural; name the affected consumer outcome/boundary or plausible failure. This does not impose a budget on every loop or a stress fixture on every slice.
+4. **T4 Explicit behavior** — Are requested observable outcomes, compatibility, scope, important errors, safety, and accepted-risk decisions sufficiently resolved? No → Structural and interrogation. Yes → record the complete outcome contract or its authoritative source in this evidence row. Group equivalent cases; prose or a behavior table is sufficient, and implementation knobs/timers do not become acceptance merely because measurable.
 
-T1=no, T2=no, T3=no, T4=yes → **Local**.
-
-A test you cannot answer: record the unknown test and the reason in `route.md`, and take the higher-evidence route — Empirical > Structural > Local. T1 unknown → Empirical; any of T2–T4 unknown → Structural.
+T1=no, T2=no, T3=no, T4=yes → Local. Investigate repository-answerable unknowns rather than asking the requester. A consequential unresolved external fact selects Empirical; unknown product/structural/scale decisions select Structural. An unspecified implementation detail alone does not force interrogation or a probe.
 
 ## Direct stage entry
 
-Routing is a one-time decision recorded in `route.md`. A downstream stage loaded directly without routing consumes the existing artifact directory per [workflow contract](references/CONTRACT.md): unique match → use it; several matches → name them and ask; none → route first. An existing route for an unchanged request is adopted unless a downstream stage returns evidence that a recorded route-test verdict is wrong or stale; that correction reruns the affected test and precedence, then rewrites `route.md`. A materially changed request reruns all four tests.
+Adopt an existing route for the unchanged request. Correct only a verdict shown wrong/stale by new evidence, then reapply precedence; a materially changed request reruns the tests. Exactly one matching artifact directory is adopted under the contract. None → route first; multiple plausible directories → name them and ask rather than guessing.
 
 ## Process
 
-1. **Read the contract.** [workflow contract](references/CONTRACT.md) owns everything this stage references.
-2. **Name the change and locate the directory.** Derive `<change-slug>` from the change. Inspect `.<change-slug>/`: an existing `route.md` for the same change follows the adoption-or-correction rule above; a `route.md` for a different change in the same directory, or multiple plausible directories → stop and name the competing directories for the user.
-3. **Run the four tests.** Gather evidence for each: the request text, the code paths and interfaces involved, and any commands run to verify behavior. A YES for T2 names current and candidate owners, the responsibility movement, affected interfaces/dependency direction, and protected parents; a NO states why responsibility ownership is unchanged. Where a test needs an answer you cannot get, record it unknown.
-4. **Select the route.** Apply the mapping in Route selection.
-5. **Write `route.md`.** Fill the template below completely: every conditional field as `N/A — reason`.
-6. **Hand off.** Local → implement with the repository's normal fix/TDD process, run the focused verification named in `route.md`, then return to this stage and append the command, date, and `PASS` or `FAIL` result under `Terminal criterion`; this stage owns that record. During Local work and before completion, recheck T2 against actual growth and applicable gates; a newly reached length-review trigger pauses further growth or gate changes and runs the **Size stop**. Retain and raise or Defer stays Local and records the choice in `route.md`; Reshape corrects the route under Direct stage entry. Structural or Empirical with unresolved behavior (T4 `no` or unknown) → read [`interrogated-spec`](references/interrogated-spec.md). Empirical with explicit behavior → read [`prove-it-prototype`](references/prove-it-prototype.md). Structural with explicit behavior → read [`falsifiable-design`](references/falsifiable-design.md). A receiving stage owns the next hand-off.
+### 1. Resolve the change
 
-## Completion criterion
+Read the contract, request, repository instructions, and existing route when any. Identify the canonical `.<change-slug>/` directory.
 
-`route.md` exists with: all four tests answered (verdict + evidence), the selected route matching the verdict vector, T2 evidence naming module-shape facts or why ownership is unchanged, every length-review trigger carrying the requester's verbatim Size stop choice, the complete given/when/then behavior contract recorded in T4 evidence when the verdict is yes (the behavior source when `spec.md` is `N/A`), required artifacts listed with owners, and every skipped artifact carrying `N/A — reason`. The route's terminal criterion below is checked after routing: this stage records the Local result; downstream stages satisfy Structural and Empirical criteria.
+**Completion:** change and route ownership are unambiguous.
+
+### 2. Gather evidence and select
+
+Answer T1–T4 from the request and relevant repository facts. Preserve settled behavior and valid evidence. Apply precedence, naming any unresolved decision or factual dependency precisely.
+
+**Completion:** all route tests have verdicts and evidence; the selected route matches them.
+
+### 3. Write route.md
+
+Record:
+
+- change and date;
+- T1–T4 verdicts/evidence, with grouped behavior or its source in T4;
+- selected route and reason;
+- required artifacts and owning stages;
+- the applicable downstream sequence and terminal criterion;
+- supplied feature budget or hard-limit disposition only when relevant.
+
+Omit inapplicable artifact rows, or give a short skip reason where it explains an applicability decision; no repeated N/A template is required. Never omit an existing required obligation to make routing appear complete.
+
+**Completion:** `route.md` carries sufficient behavior and premise/ownership evidence for downstream stages without requiring implementation acceptance or mandatory shape enumeration.
+
+### 4. Hand off
+
+Local → implement with normal repository fix/TDD, perform the named relevant checks and real consumer execution, and return results to this route owner. During implementation recheck changed T1–T4 facts; material new ownership/behavior/risk corrects the route rather than being hidden. Apply hard limits and any supplied soft budget under Size stop, not a workflow-generated threshold.
+
+Structural/Empirical with unresolved product decisions → read [`interrogated-spec`](references/interrogated-spec.md). Empirical with explicit behavior → read [`prove-it-prototype`](references/prove-it-prototype.md). Structural with explicit behavior → read [`falsifiable-design`](references/falsifiable-design.md). Each receiving stage owns its next hand-off; a scoped premise hand-off names dependent work still blocked.
+
+## Routing completion
+
+`route.md` exists with evidence-backed verdicts, the matching route, sufficient T4 outcomes, required artifact ownership, and a clear next stage. Routing completion does not mean implementation is complete.
 
 ## Terminal criteria per route
 
-- **Local** — the focused behavioral verification named in `route.md` records `PASS`, and the final T2 recheck records no trigger without a recorded Size stop choice; a Retain and raise choice includes the updated threshold in its policy ledger. For files with length gates, that evidence includes diff inspection against [module shape](references/module-shape.md)'s **Length review** preservation rule even when the threshold is not reached; restore any evasion and reevaluate the trigger before completion.
-- **Structural** — every downstream artifact satisfies its owning stage's completion criterion, ending with no `FAIL` in [`checkpointed-build`](references/checkpointed-build.md)'s recorded gate.
-- **Empirical** — [`prove-it-prototype`](references/prove-it-prototype.md) records `PASS` for every empirical premise, every later artifact satisfies its owning stage's completion criterion, and [`checkpointed-build`](references/checkpointed-build.md) records no `FAIL`.
-
-## The `route.md` template
-
-```markdown
-# Route: <slug>
-
-Change: <one-line description>
-Date: <YYYY-MM-DD>
-
-## Route tests
-
-| # | Test | Evidence | Verdict |
-|---|------|----------|---------|
-| 1 | Empirical premise | <premise and the evidence covering it — current repository evidence or existing evidence.md — or why that evidence is stale> | no |
-| 2 | Structural module shape | <interfaces/schemas/seams/dependencies/responsibility owners touched; current and candidate owners; protected parents — or why ownership is unchanged; gate/policy lookup paths or commands and results, including evidence of absence; for each applicable threshold: current size, rough feature-growth projection and uncertainty margin, trigger verdict, and the requester's verbatim Size stop choice when triggered> | no |
-| 3 | Production-scale risk | <scale dimensions and the load they would see> | no |
-| 4 | Explicit behavior | <given/when/then triples of the complete observable behavior contract when verdict is yes (behavior source, since spec.md is N/A); unresolved decisions when verdict is no> | yes |
-
-Unknown tests: <none | T#: <reason the answer was unavailable>>
-
-## Selected route
-
-<Local | Structural | Empirical> — <one-line why>
-
-## Required artifacts
-
-| Artifact | Owner | Status |
-|---|---|---|
-| route.md | change-workflow | this file |
-| spec.md | interrogated-spec | <required — unresolved behavior to interrogate (T4 verdict) | N/A — behavior fully explicit (T4 verdict)> |
-| evidence.md, probe.* | prove-it-prototype | <required — Empirical route (T1 verdict) | N/A — no unverified premise (T1 verdict)> |
-| design.md | falsifiable-design | <required | N/A — Local route: no design gate> |
-| plan.md | budgeted-plan | <required | N/A — Local route: no plan gate> |
-
-Verification checkpoint in `checkpointed-build`: <required — Structural or Empirical route; design selects oracle/mutation applicability | N/A — Local route: checkpointed-build does not run>
-
-## Downstream sequence
-
-<interrogated-spec → prove-it-prototype → falsifiable-design → budgeted-plan → checkpointed-build | the applicable subsequence | none — implement with normal repository fix/TDD>
-
-## Terminal criterion
-
-<Local — focused behavioral verification: <test or smoke run>; after the hand-off append `Result: <YYYY-MM-DD> | <command> | <PASS or FAIL>` and final T2 evidence under the Local terminal criterion above | Structural/Empirical — every downstream artifact satisfies its owning stage's completion criterion, ending with no FAIL in checkpointed-build's recorded gate>
-```
+- **Local** — requested behavior and caller migration are delivered; relevant behavioral, consumer, and repository checks pass; required independent review is satisfied; no blocking defect or required proof remains unresolved. Record delivered behavior, performed checks/results, and unresolved failures in `route.md`. Any actual hard-limit change has owner authorization, and a supplied soft-budget overrun has its explanation. No count-fitting compression/pass-through split is used.
+- **Structural** — required artifacts satisfy their owning criteria and checkpointed-build's final assembled behavior, consumer/platform/repository, and independent-review proof is valid, with no blocking defect or missing required check.
+- **Empirical** — all required factual premises have valid answers, dependent implementation uses them, and Structural's final assembled criteria hold. An unneeded probe file or second oracle is not an acceptance requirement.

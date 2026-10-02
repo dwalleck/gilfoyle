@@ -11,7 +11,7 @@ One portable orchestrator. Stage documents are disclosed only when their branch 
 
 Read the [workflow contract](references/CONTRACT.md) before loading a stage. It owns artifact paths, ownership, gate states, shared definitions, tracker taxonomy, and approval semantics.
 
-Every link in this skill is relative to this skill root. Load only the selected stage document. Within it, load another reference only where a numbered step explicitly directs; a hand-off to the next stage waits for the current stage's completion or hand-off criterion.
+Every link in this skill is relative to this skill root. Load only the selected stage document and references it explicitly requires for the active branch. A hand-off follows the current stage's completion or hand-off criterion; a scoped hand-off names unresolved dependencies and never declares their work complete.
 
 ## Select the first matching entry branch
 
@@ -23,6 +23,6 @@ The selected entry branch, current stage, and — on change branches — recorde
 ## Completion
 
 - A change branch finishes only when `route.md`'s terminal criterion holds.
-- A review branch finishes only when every finding has one evidence state, one decision, and every accepted behavior-changing fix has passed its applicable gate.
+- A review branch finishes only when every finding has one evidence state and decision, accepted behavior-changing or technical-proof repairs have passed applicable checks and independent review, and no blocking defect or required evidence remains unresolved.
 
 If the active stage's completion or hand-off criterion does not hold, resume that stage rather than reporting completion.

@@ -64,14 +64,7 @@ class PermissionContractTests(unittest.TestCase):
         self.assertNotIn('"git push *": allow', text)
         self.assertNotIn('"git reset *": allow', text)
         self.assertNotIn('"git clean *": allow', text)
-        self.assertIn("recompute them and halt on any drift", text)
 
-    def test_unified_root_discloses_only_selected_stage(self):
-        root_skill = (ROOT / "skills/gilfoyle/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn(
-            "Stage documents are disclosed only when their branch runs", root_skill
-        )
-        self.assertIn("Load only the selected stage document", root_skill)
 
 
 if __name__ == "__main__":

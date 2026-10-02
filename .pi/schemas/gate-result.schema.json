@@ -4,7 +4,7 @@
   "title": "Gilfoyle final gate result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "runId", "specDigest", "stage", "decision", "classification", "eligibleRetry", "oracleAgreesWithExpected", "withinPlannedSlice", "checks", "lifecycle", "acceptance", "summary"],
+  "required": ["version", "runId", "specDigest", "stage", "decision", "classification", "eligibleRetry", "checks", "lifecycle", "acceptance", "summary", "unresolvedFailures"],
   "properties": {
     "version": {"const": 1},
     "runId": {"type": "string", "minLength": 1},
@@ -13,25 +13,27 @@
     "decision": {"enum": ["NEEDS_WORK", "HALT_FALSIFIED", "NEEDS_DECISION", "ALL_GREEN"]},
     "classification": {"enum": ["none", "class-a", "class-b", "ambiguous"]},
     "eligibleRetry": {"type": "boolean"},
-    "oracleAgreesWithExpected": {"type": "boolean"},
+    "contractSupportsExpected": {"type": "boolean"},
     "withinPlannedSlice": {"type": "boolean"},
     "sliceKey": {"type": "string", "minLength": 1},
+    "retryBasis": {"type": "string", "minLength": 1},
     "implicatedLeg": {"enum": ["impl", "oracle", "design", "substrate"]},
     "checks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/check"}},
     "lifecycle": {"$ref": "#/$defs/lifecycle"},
     "acceptance": {"$ref": "#/$defs/acceptance"},
-    "summary": {"type": "string", "minLength": 1}
+    "summary": {"type": "string", "minLength": 1, "description": "Delivered behavior and relevant caller/ownership changes."},
+    "unresolvedFailures": {"type": "array", "items": {"type": "string", "minLength": 1}}
   },
   "allOf": [
-    {"if": {"properties": {"decision": {"const": "NEEDS_WORK"}}}, "then": {"properties": {"classification": {"const": "class-a"}, "eligibleRetry": {"const": true}, "oracleAgreesWithExpected": {"const": true}, "withinPlannedSlice": {"const": true}}, "required": ["sliceKey"]}},
-    {"if": {"properties": {"decision": {"const": "ALL_GREEN"}}}, "then": {"properties": {"classification": {"const": "none"}, "eligibleRetry": {"const": false}, "oracleAgreesWithExpected": {"const": true}, "withinPlannedSlice": {"const": true}, "acceptance": {"properties": {"passed": {"const": true}}}, "checks": {"not": {"contains": {"properties": {"status": {"const": "fail"}}, "required": ["status"]}}}}}},
-    {"if": {"properties": {"decision": {"const": "HALT_FALSIFIED"}}}, "then": {"properties": {"classification": {"const": "class-b"}, "eligibleRetry": {"const": false}}, "required": ["implicatedLeg"]}},
-    {"if": {"properties": {"decision": {"const": "NEEDS_DECISION"}}}, "then": {"properties": {"classification": {"const": "ambiguous"}, "eligibleRetry": {"const": false}}}}
+    {"if": {"properties": {"decision": {"const": "NEEDS_WORK"}}}, "then": {"properties": {"classification": {"const": "class-a"}, "eligibleRetry": {"const": true}, "contractSupportsExpected": {"const": true}, "withinPlannedSlice": {"const": true}, "checks": {"contains": {"properties": {"status": {"enum": ["fail", "blocked"]}}, "required": ["status"]}}, "unresolvedFailures": {"minItems": 1}}, "required": ["sliceKey", "contractSupportsExpected", "withinPlannedSlice", "retryBasis"]}},
+    {"if": {"properties": {"decision": {"const": "ALL_GREEN"}}}, "then": {"properties": {"classification": {"const": "none"}, "eligibleRetry": {"const": false}, "lifecycle": {"properties": {"state": {"const": "complete"}}}, "acceptance": {"properties": {"passed": {"const": true}}}, "unresolvedFailures": {"maxItems": 0}, "checks": {"allOf": [{"not": {"contains": {"properties": {"status": {"enum": ["fail", "blocked"]}}, "required": ["status"]}}}, {"contains": {"properties": {"kind": {"const": "independent-review"}, "status": {"const": "pass"}}, "required": ["kind", "status"]}}]}}}},
+    {"if": {"properties": {"decision": {"const": "HALT_FALSIFIED"}}}, "then": {"properties": {"classification": {"const": "class-b"}, "eligibleRetry": {"const": false}, "checks": {"contains": {"properties": {"status": {"enum": ["fail", "blocked"]}}, "required": ["status"]}}, "unresolvedFailures": {"minItems": 1}}, "required": ["implicatedLeg"]}},
+    {"if": {"properties": {"decision": {"const": "NEEDS_DECISION"}}}, "then": {"properties": {"classification": {"const": "ambiguous"}, "eligibleRetry": {"const": false}, "checks": {"contains": {"properties": {"status": {"enum": ["fail", "blocked"]}}, "required": ["status"]}}, "unresolvedFailures": {"minItems": 1}}}}
   ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:[\\\\/])(?![\\\\/])(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).+$"},
-    "check": {"type": "object", "additionalProperties": false, "required": ["key", "kind", "status", "expected", "actual", "oracleActual"], "properties": {"key": {"type": "string", "minLength": 1}, "kind": {"enum": ["build", "unit", "stress", "oracle", "budget", "falsifier", "regression-fence"]}, "status": {"enum": ["pass", "fail"]}, "expected": {}, "actual": {}, "oracleActual": {}, "plannedFiles": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/relativePath"}}}},
+    "check": {"type": "object", "additionalProperties": false, "required": ["key", "kind", "status", "expected"], "properties": {"key": {"type": "string", "minLength": 1}, "kind": {"enum": ["build", "unit", "stress", "oracle", "budget", "falsifier", "regression-fence", "consumer", "native", "repository", "performance", "independent-review", "mutation", "compiler", "dependency", "reference"]}, "status": {"enum": ["pass", "fail", "blocked"]}, "expected": {}, "actual": {}, "evidenceRef": {"type": "string", "minLength": 1}, "scope": {"type": "string", "minLength": 1}, "owner": {"type": "string", "minLength": 1}, "step": {"type": "string", "minLength": 1}, "plannedFiles": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/relativePath"}}}, "allOf": [{"if": {"properties": {"status": {"enum": ["pass", "fail"]}}}, "then": {"required": ["actual", "evidenceRef"]}}, {"if": {"properties": {"status": {"const": "blocked"}}}, "then": {"required": ["owner", "step"]}}, {"if": {"properties": {"kind": {"const": "independent-review"}}}, "then": {"required": ["scope"]}}]},
     "lifecycle": {"type": "object", "additionalProperties": false, "required": ["runId", "childId", "state"], "properties": {"runId": {"type": "string", "minLength": 1}, "childId": {"type": "string", "minLength": 1}, "state": {"enum": ["complete", "failed", "paused"]}}},
     "acceptance": {"type": "object", "additionalProperties": false, "required": ["provenance", "passed"], "properties": {"provenance": {"enum": ["checked", "verified", "reviewed"]}, "passed": {"type": "boolean"}}}
   }
