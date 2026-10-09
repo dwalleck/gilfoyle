@@ -82,7 +82,7 @@ Before commit, update comments, docs, examples, counts, names, and callers made 
 
 ### 7. Commit atomically
 
-One commit per independently-green slice or atomic repair. The message names governing claims/obligations and references the single owning completion record rather than copying results. Include required evidence and tracker references with the behavior-owning change so rebase/restack preserves them. Cite shared accessible evidence, not credentials or private transcript paths. Publication remains subject to scoped shipping authorization.
+One commit per independently-green slice or atomic repair. The message names governing claims/obligations and references the single owning completion record rather than copying results. Include required evidence and tracker references with the behavior-owning change so rebase/restack preserves them. Cite shared accessible evidence, not credentials or private transcript paths. Publication remains subject to scoped shipping authorization. A test-data or fixture-only commit is checked by the focused tests it touches; the full suite runs at the next production change or the final integration check.
 
 ### 8. Check drift and delivery boundaries
 

@@ -50,7 +50,7 @@ Revalidate conclusions affected by a changed production path, fence, fixture, or
 | Evidence | Conclusion to preserve |
 |---|---|
 | Regression, implementation/oracle comparison, or budget check | The checked implementation still satisfies the behavior or bound on the relevant inputs and environment. |
-| Mutation and restoration, when required by the declared verification | The fence detects the intended defect and passes with correct code restored. New or changed fences, or changed mutation applicability, require renewed red/restored-green proof for the applicable mutations. |
+| Mutation and restoration, when required by the declared verification | The fence detects the intended defect and passes with correct code restored. New or changed fences, or changed mutation applicability, require renewed red/restored-green proof for the applicable mutations. A mutation's RED stays valid while its mutated line and the assertions that turned it red are unchanged; new tests beside them and repairs elsewhere leave it valid. Cite the earlier run with an applicability line; rerun only mutations whose line or fence changed, never as a final pass. |
 | Empirical probe | The external/system premise still holds; repeat the probe only when its verified premise or supporting evidence is invalidated. |
 | Independent review | The reviewed behavior, ownership, interfaces, dependencies, and assumptions still cover the delivered change. |
 
